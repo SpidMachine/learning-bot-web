@@ -83,25 +83,30 @@ npm run build
 2. `/mybots` → выберите бота → **Bot Settings** → **Menu Button** → укажите URL деплоя
 3. Или `/newapp` для создания Mini App
 
-### 3. Кнопка в боте
+### 3. Кнопка в боте (learning-bot-api)
 
-Готовый код бота с кнопкой Mini App — в папке [`bot/`](bot/). Запуск:
+Бот запускается только из бэкенда — отдельный Python-бот не нужен.
 
-```bash
-cd bot && pip install -r requirements.txt && cp .env.example .env
-# Укажите BOT_TOKEN в .env
-python main.py
-```
-
-Или вставьте в существующий бот (Python / aiogram):
+Добавьте в обработчик `/start` в **learning-bot-api**:
 
 ```python
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 
-keyboard = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="Открыть обучение", web_app=WebAppInfo(url="https://your-app.vercel.app"))]
-])
+WEBAPP_URL = "https://spidmachine.github.io/learning-bot-web/"
+
+def start_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(
+            text="📚 Открыть обучение",
+            web_app=WebAppInfo(url=WEBAPP_URL),
+        )
+    ]])
+
+# в обработчике /start:
+await message.answer("Привет! Открой обучение:", reply_markup=start_keyboard())
 ```
+
+Menu Button в BotFather и эта inline-кнопка могут работать одновременно.
 
 ### 4. Dev-режим вне Telegram
 
