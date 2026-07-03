@@ -7,7 +7,7 @@ Angular UI для Telegram Mini App сервиса [learning-bot-api](https://gi
 ## Стек
 
 - Angular 19 (standalone components, `@if` / `@for`)
-- Tailwind CSS 4
+- Tailwind CSS 3
 - Telegram WebApp SDK (`telegram-web-app.js`)
 - HTTP-клиент с авторизацией через `initData`
 
@@ -21,6 +21,30 @@ npm start
 Приложение откроется на `http://localhost:4200`.
 
 По умолчанию включён **mock-режим** (`environment.useMocks: true`) — UI работает без backend.
+
+## Работа с двумя репозиториями в одном чате Cursor
+
+Чтобы агент видел и фронт, и бэкенд:
+
+1. Клонируйте оба репозитория **рядом** в одну папку:
+
+```bash
+mkdir learning-bot && cd learning-bot
+git clone https://github.com/SpidMachine/learning-bot-web.git
+git clone https://github.com/SpidMachine/learning-bot-api.git
+```
+
+2. Откройте workspace-файл в Cursor:
+
+```bash
+cursor learning-bot-web/learning-bot.code-workspace
+```
+
+Или: **File → Open Workspace from File** → `learning-bot.code-workspace`.
+
+3. В чате Cursor будут доступны оба проекта. Правило `.cursor/rules/multi-repo.mdc` подсказывает агенту архитектуру.
+
+> Для Cloud Agent оба репозитория должны быть доступны в одном workspace (приватный `learning-bot-api` — с авторизацией GitHub).
 
 ### Подключение к learning-bot-api
 
@@ -83,25 +107,30 @@ npm run build
 2. `/mybots` → выберите бота → **Bot Settings** → **Menu Button** → укажите URL деплоя
 3. Или `/newapp` для создания Mini App
 
-### 3. Кнопка в боте
+### 3. Кнопка в боте (learning-bot-api)
 
-Готовый код бота с кнопкой Mini App — в папке [`bot/`](bot/). Запуск:
+Бот запускается только из бэкенда — отдельный Python-бот не нужен.
 
-```bash
-cd bot && pip install -r requirements.txt && cp .env.example .env
-# Укажите BOT_TOKEN в .env
-python main.py
-```
-
-Или вставьте в существующий бот (Python / aiogram):
+Добавьте в обработчик `/start` в **learning-bot-api**:
 
 ```python
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 
-keyboard = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="Открыть обучение", web_app=WebAppInfo(url="https://your-app.vercel.app"))]
-])
+WEBAPP_URL = "https://spidmachine.github.io/learning-bot-web/"
+
+def start_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(
+            text="📚 Открыть обучение",
+            web_app=WebAppInfo(url=WEBAPP_URL),
+        )
+    ]])
+
+# в обработчике /start:
+await message.answer("Привет! Открой обучение:", reply_markup=start_keyboard())
 ```
+
+Menu Button в BotFather и эта inline-кнопка могут работать одновременно.
 
 ### 4. Dev-режим вне Telegram
 
