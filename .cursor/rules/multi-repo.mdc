@@ -1,0 +1,25 @@
+---
+description: Контекст двух репозиториев learning-bot — фронт и бэкенд
+alwaysApply: true
+---
+
+# Learning Bot — два репозитория
+
+В workspace два связанных проекта:
+
+## learning-bot-web (этот репозиторий)
+- Angular 19 Telegram Mini App
+- GitHub Pages: `https://spidmachine.github.io/learning-bot-web/`
+- Авторизация API: заголовок `Authorization: tma <initData>`
+- Mock-режим: `environment.useMocks` в `src/environments/`
+
+## learning-bot-api (соседняя папка)
+- Backend + Telegram-бот (единственный polling-процесс с BOT_TOKEN)
+- REST API: `/api/v1/me`, `/courses`, `/lessons`, `/quizzes`
+- Кнопка Mini App добавляется в обработчик `/start` бота на бэкенде
+- URL Mini App: `https://spidmachine.github.io/learning-bot-web/`
+
+## Правила
+- Не создавать отдельный Python-бот для polling — бот только в learning-bot-api
+- Изменения фронта — в learning-bot-web, API и бот — в learning-bot-api
+- При правках API сверять контракт с `src/app/shared/models/learning.models.ts` и `HttpLearningApiService`

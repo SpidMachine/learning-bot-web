@@ -1,0 +1,18 @@
+{
+  "folders": [
+    {
+      "name": "learning-bot-web (Mini App)",
+      "path": "."
+    },
+    {
+      "name": "learning-bot-api (Backend + Bot)",
+      "path": "../learning-bot-api"
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/.angular": true
+    }
+  }
+}

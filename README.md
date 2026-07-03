@@ -22,6 +22,30 @@ npm start
 
 По умолчанию включён **mock-режим** (`environment.useMocks: true`) — UI работает без backend.
 
+## Работа с двумя репозиториями в одном чате Cursor
+
+Чтобы агент видел и фронт, и бэкенд:
+
+1. Клонируйте оба репозитория **рядом** в одну папку:
+
+```bash
+mkdir learning-bot && cd learning-bot
+git clone https://github.com/SpidMachine/learning-bot-web.git
+git clone https://github.com/SpidMachine/learning-bot-api.git
+```
+
+2. Откройте workspace-файл в Cursor:
+
+```bash
+cursor learning-bot-web/learning-bot.code-workspace
+```
+
+Или: **File → Open Workspace from File** → `learning-bot.code-workspace`.
+
+3. В чате Cursor будут доступны оба проекта. Правило `.cursor/rules/multi-repo.mdc` подсказывает агенту архитектуру.
+
+> Для Cloud Agent оба репозитория должны быть доступны в одном workspace (приватный `learning-bot-api` — с авторизацией GitHub).
+
 ### Подключение к learning-bot-api
 
 1. Запустите API на `http://localhost:8080`
