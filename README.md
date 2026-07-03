@@ -7,7 +7,7 @@ Angular UI для Telegram Mini App сервиса [learning-bot-api](https://gi
 ## Стек
 
 - Angular 19 (standalone components, `@if` / `@for`)
-- Tailwind CSS 4
+- Tailwind CSS 3
 - Telegram WebApp SDK (`telegram-web-app.js`)
 - HTTP-клиент с авторизацией через `initData`
 
