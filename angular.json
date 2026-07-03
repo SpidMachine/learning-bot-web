@@ -41,6 +41,7 @@
           },
           "configurations": {
             "production": {
+              "baseHref": "/learning-bot-web/",
               "budgets": [
                 {
                   "type": "initial",

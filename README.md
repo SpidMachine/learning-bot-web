@@ -59,6 +59,15 @@ ng serve --proxy-config proxy.conf.json
 
 ### 1. Деплой (HTTPS обязателен)
 
+**GitHub Pages** (рекомендуется для этого репозитория):
+
+1. **Settings → Pages → Source:** GitHub Actions
+2. После merge в `main` workflow задеплоит приложение
+3. URL: `https://spidmachine.github.io/learning-bot-web/`
+4. В BotFather укажите **именно этот URL** (со слэшем в конце — необязательно, но путь `/learning-bot-web/` обязателен)
+
+> Если страница пустая — убедитесь, что в production-сборке задан `baseHref: /learning-bot-web/` (уже настроено в `angular.json`).
+
 **Vercel:**
 
 ```bash
@@ -74,7 +83,17 @@ npm run build
 2. `/mybots` → выберите бота → **Bot Settings** → **Menu Button** → укажите URL деплоя
 3. Или `/newapp` для создания Mini App
 
-### 3. Кнопка в боте (Python / aiogram пример)
+### 3. Кнопка в боте
+
+Готовый код бота с кнопкой Mini App — в папке [`bot/`](bot/). Запуск:
+
+```bash
+cd bot && pip install -r requirements.txt && cp .env.example .env
+# Укажите BOT_TOKEN в .env
+python main.py
+```
+
+Или вставьте в существующий бот (Python / aiogram):
 
 ```python
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
