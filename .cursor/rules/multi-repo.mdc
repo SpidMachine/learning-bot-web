@@ -20,6 +20,7 @@ alwaysApply: true
 - REST API: `/api/v1/me`, `/courses`, `/lessons`, `/quizzes`
 - Кнопка Mini App добавляется в обработчик `/start` бота на бэкенде
 - URL Mini App: `https://spidmachine.github.io/learning-bot-web/`
+- Репозиторий learning-bot-api 'https://github.com/SpidMachine/learning-bot-api'
 
 ## Правила
 - Не создавать отдельный Python-бот для polling — бот только в learning-bot-api
