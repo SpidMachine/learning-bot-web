@@ -12,7 +12,7 @@ alwaysApply: true
 - GitHub Pages: `https://spidmachine.github.io/learning-bot-web/`
 - Авторизация API: заголовок `X-Telegram-Init-Data` (Telegram.WebApp.initData)
 - Base URL API: `/api/v1` (dev через proxy → `http://localhost:8080`)
-- Mock-режим: `environment.useMocks` в `src/environments/`
+- Mock-режим: `environmentLocal.useMocks` в `src/environments/`
 - Контракт API: `docs/openapi.json`, правило `.cursor/rules/learning-bot-api-contract.mdc`
 
 ## learning-bot-api (соседняя папка)

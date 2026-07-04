@@ -1,10 +1,14 @@
 {
   "name": "learning-bot-web",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve --proxy-config proxy.conf.json",
+    "start": "ng serve --proxy-config proxy.conf.js",
+    "start:local": "ng serve --configuration local --host 0.0.0.0 --disable-host-check",
+    "start:telegram": "ng serve --configuration local --host 0.0.0.0 --disable-host-check --proxy-config proxy.conf.js",
+    "tunnel": "npx cloudflared tunnel --url http://127.0.0.1:4200",
     "build": "ng build",
+    "build:local": "ng build --configuration local",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },

@@ -1,85 +1,110 @@
-/** DTO ответов learning-bot-api. Синхронизировать с docs/openapi.json */
+/** DTO из docs/openapi.json (learning-bot-api) */
 
-export interface ApiAchievementDto {
-  id: string;
+export interface MeDto {
+  id: number;
+  firstName: string;
+  username?: string;
+  miniAppUrl?: string;
+}
+
+export interface TopicDto {
+  key: string;
   title: string;
-  description: string;
-  unlocked: boolean;
   emoji: string;
 }
 
-export interface ApiLessonSummaryDto {
-  id: number;
+export interface TopicStatsDto {
   title: string;
-  order: number;
-  completed: boolean;
-  quizId?: number;
+  answered: number;
+  correct: number;
+  accuracy: number;
 }
 
-export interface ApiContinueLessonDto extends ApiLessonSummaryDto {
-  courseId: number;
-  courseTitle: string;
+export interface StatsDto {
+  totalAnswered: number;
+  totalCorrect: number;
+  accuracy: number;
+  streakDays: number;
+  dueForReview: number;
+  flashcardsDone: number;
+  weeklyGoal: number;
+  weekAnswered: number;
+  dailyCounts: Record<string, number>;
+  topicStats: TopicStatsDto[];
 }
 
-export interface ApiCourseDto {
-  id: number;
-  title: string;
-  description: string;
-  progress: number;
-  lessonsCount: number;
-  completedLessons: number;
-  imageEmoji: string;
+export interface QuestionDto {
+  id: string;
+  kind: string;
+  topics: string[];
+  difficulty: string;
+  question: string;
+  options: string[];
+  tags: string[];
+  snippet?: string;
 }
 
-export interface ApiCourseDetailDto extends ApiCourseDto {
-  lessons: ApiLessonSummaryDto[];
-}
-
-export interface ApiUserProfileDto {
-  id: number;
-  firstName: string;
-  lastName?: string;
-  username?: string;
-  xp: number;
-  streak: number;
-  completedLessons: number;
-  achievements: ApiAchievementDto[];
-  continueLesson?: ApiContinueLessonDto;
-}
-
-export interface ApiLessonDto {
-  id: number;
-  courseId: number;
-  title: string;
-  content: string[] | string;
-  nextLessonId?: number;
-  quizId?: number;
-}
-
-export interface ApiQuizOptionDto {
-  id: number;
-  text: string;
-}
-
-export interface ApiQuizQuestionDto {
-  id: number;
-  text: string;
-  options: ApiQuizOptionDto[];
-}
-
-export interface ApiQuizDto {
-  id: number;
-  title: string;
-  questions: ApiQuizQuestionDto[];
-}
-
-export interface ApiQuizSubmitRequestDto {
-  answers: Record<string, number>;
-}
-
-export interface ApiQuizSubmitResultDto {
-  score: number;
+export interface SessionDto {
+  mode: string;
+  currentIndex: number;
   total: number;
-  passed: boolean;
-  correctAnswers: Record<string, number> | Record<number, number>;
+  correctCount: number;
+  finished: boolean;
+  currentQuestion?: QuestionDto;
+}
+
+export interface StartSessionRequestDto {
+  mode?: string;
+  topic?: string;
+}
+
+export interface QuizPickRequestDto {
+  topic?: string;
+  kind?: string;
+  tag?: string;
+}
+
+export interface QuizPickDto {
+  question: QuestionDto;
+  source: string;
+}
+
+export interface AnswerRequestDto {
+  itemId: string;
+  selectedIndex: number;
+}
+
+export interface DocLinkDto {
+  title: string;
+  url: string;
+}
+
+export interface AnswerResultDto {
+  correct: boolean;
+  correctIndex: number;
+  explanation: string;
+  extendedExplanation?: string;
+  wrongOptions?: string[];
+  docLinks?: DocLinkDto[];
+  newAchievements?: string[];
+}
+
+export interface SettingsDto {
+  reminderHour: number;
+  reminderEnabled: boolean;
+  difficultyFilter: string;
+  weeklyGoal: number;
+  weekAnswered: number;
+}
+
+export interface UpdateSettingsRequestDto {
+  reminderHour?: number;
+  reminderEnabled?: boolean;
+  difficultyFilter?: string;
+  weeklyGoal?: number;
+}
+
+export interface ApiErrorDto {
+  error: string;
+  message: string;
 }

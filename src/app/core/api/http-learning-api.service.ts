@@ -1,81 +1,131 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { map, Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { catchError, forkJoin, map, Observable, of, throwError } from 'rxjs';
+import { environmentLocal } from '../../../environments/environment.local';
 import {
-  ApiCourseDetailDto,
-  ApiCourseDto,
-  ApiLessonDto,
-  ApiQuizDto,
-  ApiQuizSubmitResultDto,
-  ApiUserProfileDto,
+  AnswerResultDto,
+  MeDto,
+  QuestionDto,
+  QuizPickDto,
+  QuizPickRequestDto,
+  SessionDto,
+  StartSessionRequestDto,
+  StatsDto,
+  TopicDto,
 } from '../../shared/models/api.dto';
 import {
-  Course,
-  CourseDetail,
-  Lesson,
-  Quiz,
-  QuizSubmitRequest,
-  QuizSubmitResult,
-  UserProfile,
+  AnswerResult,
+  HomeDashboard,
+  ProfileView,
+  Question,
+  Session,
+  Topic,
 } from '../../shared/models/learning.models';
 import {
-  mapCourse,
-  mapCourseDetail,
-  mapLesson,
-  mapQuiz,
-  mapQuizSubmitRequest,
-  mapQuizSubmitResult,
-  mapUserProfile,
+  mapAnswerResult,
+  mapMe,
+  mapQuestion,
+  mapQuizPick,
+  mapSession,
+  mapStats,
+  mapTopic,
 } from './api.mapper';
 import { LearningApi } from './learning-api.interface';
 
 @Injectable()
 export class HttpLearningApiService implements LearningApi {
-  private readonly baseUrl = environment.apiBaseUrl;
+  private readonly baseUrl = environmentLocal.apiBaseUrl;
 
   constructor(private readonly http: HttpClient) {}
 
-  getProfile(): Observable<UserProfile> {
-    return this.http
-      .get<ApiUserProfileDto>(`${this.baseUrl}/me`)
-      .pipe(map((dto) => mapUserProfile(dto)));
+  getHomeDashboard(): Observable<HomeDashboard> {
+    return forkJoin({
+      me: this.http.get<MeDto>(`${this.baseUrl}/me`),
+      stats: this.http.get<StatsDto>(`${this.baseUrl}/stats`),
+      session: this.getCurrentSession(),
+      achievements: this.http.get<string[]>(`${this.baseUrl}/achievements`),
+    }).pipe(
+      map(({ me, stats, session, achievements }) => ({
+        me: mapMe(me),
+        stats: mapStats(stats),
+        session,
+        achievements,
+      })),
+    );
   }
 
-  getCourses(): Observable<Course[]> {
-    return this.http
-      .get<ApiCourseDto[]>(`${this.baseUrl}/courses`)
-      .pipe(map((items) => items.map((dto) => mapCourse(dto))));
+  getProfile(): Observable<ProfileView> {
+    return forkJoin({
+      me: this.http.get<MeDto>(`${this.baseUrl}/me`),
+      stats: this.http.get<StatsDto>(`${this.baseUrl}/stats`),
+      achievements: this.http.get<string[]>(`${this.baseUrl}/achievements`),
+    }).pipe(
+      map(({ me, stats, achievements }) => ({
+        me: mapMe(me),
+        stats: mapStats(stats),
+        achievements,
+      })),
+    );
   }
 
-  getCourse(id: number): Observable<CourseDetail> {
-    return this.http
-      .get<ApiCourseDetailDto>(`${this.baseUrl}/courses/${id}`)
-      .pipe(map((dto) => mapCourseDetail(dto)));
+  getTopics(): Observable<Topic[]> {
+    return forkJoin({
+      topics: this.http.get<TopicDto[]>(`${this.baseUrl}/topics`),
+      stats: this.http.get<StatsDto>(`${this.baseUrl}/stats`),
+    }).pipe(
+      map(({ topics, stats }) =>
+        topics.map((topic) => {
+          const topicStats = stats.topicStats.find((item) => item.title === topic.title);
+          return mapTopic(topic, topicStats);
+        }),
+      ),
+    );
   }
 
-  getLesson(id: number): Observable<Lesson> {
-    return this.http
-      .get<ApiLessonDto>(`${this.baseUrl}/lessons/${id}`)
-      .pipe(map((dto) => mapLesson(dto)));
+  getCurrentSession(): Observable<Session | null> {
+    return this.http.get<SessionDto>(`${this.baseUrl}/sessions/current`).pipe(
+      map((dto) => mapSession(dto)),
+      catchError((error) => (error.status === 404 ? of(null) : throwError(() => error))),
+    );
   }
 
-  completeLesson(id: number): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/lessons/${id}/complete`, {});
+  startSession(request: StartSessionRequestDto): Observable<Session> {
+    return this.http
+      .post<SessionDto>(`${this.baseUrl}/sessions`, request)
+      .pipe(map((dto) => mapSession(dto)));
   }
 
-  getQuiz(id: number): Observable<Quiz> {
+  submitAnswer(itemId: string, selectedIndex: number): Observable<AnswerResult> {
     return this.http
-      .get<ApiQuizDto>(`${this.baseUrl}/quizzes/${id}`)
-      .pipe(map((dto) => mapQuiz(dto)));
+      .post<AnswerResultDto>(`${this.baseUrl}/quiz/answers`, { itemId, selectedIndex })
+      .pipe(map((dto) => mapAnswerResult(dto)));
   }
 
-  submitQuiz(id: number, request: QuizSubmitRequest): Observable<QuizSubmitResult> {
+  pickQuiz(request: QuizPickRequestDto = {}): Observable<Question> {
     return this.http
-      .post<ApiQuizSubmitResultDto>(
-        `${this.baseUrl}/quizzes/${id}/submit`,
-        mapQuizSubmitRequest(request),
-      )
-      .pipe(map((dto) => mapQuizSubmitResult(dto)));
+      .post<QuizPickDto>(`${this.baseUrl}/quiz/pick`, request)
+      .pipe(map((dto) => mapQuizPick(dto)));
+  }
+
+  getReviewQuiz(): Observable<Question> {
+    return this.http
+      .post<QuizPickDto>(`${this.baseUrl}/quiz/review`, {})
+      .pipe(map((dto) => mapQuizPick(dto)));
+  }
+
+  getQuestion(itemId: string): Observable<Question> {
+    return this.http
+      .get<QuestionDto>(`${this.baseUrl}/quiz/items/${itemId}`)
+      .pipe(map((dto) => mapQuestion(dto)));
+  }
+
+  getBookmarks(): Observable<Question[]> {
+    return this.http
+      .get<QuestionDto[]>(`${this.baseUrl}/bookmarks`)
+      .pipe(map((items) => items.map((dto) => mapQuestion(dto))));
+  }
+
+  addBookmark(itemId: string): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/bookmarks/${itemId}`, {});
   }
 }

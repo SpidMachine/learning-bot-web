@@ -1,4 +1,5 @@
 import { Component, inject } from '@angular/core';
+import { environmentLocal } from '../../../../environments/environment.local';
 import { TelegramService } from '../../../core/telegram/telegram.service';
 
 @Component({
@@ -15,5 +16,6 @@ import { TelegramService } from '../../../core/telegram/telegram.service';
   `,
 })
 export class DevBannerComponent {
+  readonly environment = environmentLocal;
   readonly telegram = inject(TelegramService);
 }

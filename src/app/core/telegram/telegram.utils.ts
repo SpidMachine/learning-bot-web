@@ -1,9 +1,9 @@
-import { environment } from '../../../environments/environment';
+import { environmentLocal } from '../../../environments/environment.local';
 
 const DEV_INIT_DATA_KEY = 'DEV_INIT_DATA';
 
 export function getDevInitDataOverride(): string | null {
-  if (environment.production) {
+  if (environmentLocal.production) {
     return null;
   }
 

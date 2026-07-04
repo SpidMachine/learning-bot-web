@@ -11,9 +11,9 @@ export const routes: Routes = [
         loadComponent: () => import('./features/home/home.component').then((m) => m.HomeComponent),
       },
       {
-        path: 'courses',
+        path: 'topics',
         loadComponent: () =>
-          import('./features/courses/courses.component').then((m) => m.CoursesComponent),
+          import('./features/topics/topics.component').then((m) => m.TopicsComponent),
       },
       {
         path: 'profile',
@@ -23,17 +23,19 @@ export const routes: Routes = [
     ],
   },
   {
-    path: 'courses/:id',
+    path: 'topics/:key',
     loadComponent: () =>
-      import('./features/courses/course-detail.component').then((m) => m.CourseDetailComponent),
+      import('./features/topics/topic-detail.component').then((m) => m.TopicDetailComponent),
   },
   {
-    path: 'lessons/:id',
-    loadComponent: () => import('./features/lesson/lesson.component').then((m) => m.LessonComponent),
+    path: 'session',
+    loadComponent: () =>
+      import('./features/session/session.component').then((m) => m.SessionComponent),
   },
   {
-    path: 'quizzes/:id',
-    loadComponent: () => import('./features/quiz/quiz.component').then((m) => m.QuizComponent),
+    path: 'practice',
+    loadComponent: () =>
+      import('./features/practice/practice.component').then((m) => m.PracticeComponent),
   },
   { path: '**', redirectTo: '' },
 ];

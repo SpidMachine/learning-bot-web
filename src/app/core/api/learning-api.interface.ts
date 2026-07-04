@@ -1,23 +1,27 @@
 import { InjectionToken } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
-  Course,
-  CourseDetail,
-  Lesson,
-  Quiz,
-  QuizSubmitRequest,
-  QuizSubmitResult,
-  UserProfile,
+  AnswerResult,
+  HomeDashboard,
+  ProfileView,
+  Question,
+  Session,
+  Topic,
 } from '../../shared/models/learning.models';
+import { QuizPickRequestDto, StartSessionRequestDto } from '../../shared/models/api.dto';
 
 export const LEARNING_API = new InjectionToken<LearningApi>('LEARNING_API');
 
 export interface LearningApi {
-  getProfile(): Observable<UserProfile>;
-  getCourses(): Observable<Course[]>;
-  getCourse(id: number): Observable<CourseDetail>;
-  getLesson(id: number): Observable<Lesson>;
-  completeLesson(id: number): Observable<void>;
-  getQuiz(id: number): Observable<Quiz>;
-  submitQuiz(id: number, request: QuizSubmitRequest): Observable<QuizSubmitResult>;
+  getHomeDashboard(): Observable<HomeDashboard>;
+  getProfile(): Observable<ProfileView>;
+  getTopics(): Observable<Topic[]>;
+  getCurrentSession(): Observable<Session | null>;
+  startSession(request: StartSessionRequestDto): Observable<Session>;
+  submitAnswer(itemId: string, selectedIndex: number): Observable<AnswerResult>;
+  pickQuiz(request?: QuizPickRequestDto): Observable<Question>;
+  getReviewQuiz(): Observable<Question>;
+  getQuestion(itemId: string): Observable<Question>;
+  getBookmarks(): Observable<Question[]>;
+  addBookmark(itemId: string): Observable<void>;
 }

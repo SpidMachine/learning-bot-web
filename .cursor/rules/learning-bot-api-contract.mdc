@@ -7,7 +7,7 @@ alwaysApply: true
 
 ## Base URL
 - Dev: `http://localhost:8080/api/v1` (через proxy: `/api/v1`)
-- Prod: указывается в `environment.prod.ts`
+- Prod: указывается в `environmentLocal.prod.ts`
 
 ## Auth
 - Заголовок: `X-Telegram-Init-Data`
@@ -20,10 +20,16 @@ alwaysApply: true
 ## Эндпоинты
 | Method | Path | Response |
 |--------|------|----------|
-| GET | `/me` | UserProfile |
-| GET | `/courses` | Course[] |
-| GET | `/courses/{id}` | CourseDetail |
-| GET | `/lessons/{id}` | Lesson |
-| POST | `/lessons/{id}/complete` | void |
-| GET | `/quizzes/{id}` | Quiz |
-| POST | `/quizzes/{id}/submit` | QuizSubmitResult |
+| GET | `/me` | MeDto |
+| GET | `/topics` | TopicDto[] |
+| GET | `/stats` | StatsDto |
+| GET | `/achievements` | string[] |
+| GET | `/sessions/current` | SessionDto (404 если нет) |
+| POST | `/sessions` | SessionDto |
+| POST | `/quiz/answers` | AnswerResultDto |
+| POST | `/quiz/pick` | QuizPickDto |
+| POST | `/quiz/review` | QuizPickDto |
+| GET | `/quiz/items/{itemId}` | QuestionDto |
+| GET | `/bookmarks` | QuestionDto[] |
+| POST | `/bookmarks/{itemId}` | void |
+| GET/PATCH | `/settings` | SettingsDto |
