@@ -20,7 +20,53 @@ npm start
 
 Приложение откроется на `http://localhost:4200`.
 
-По умолчанию фронт ходит в **learning-bot-api** (`useMocks: false`). Запустите бэкенд на `http://localhost:8080` перед `npm start`.
+По умолчанию:
+- **В браузере** (`localhost:4200`) — mock-данные, без 401
+- **В Telegram** — реальный API с `X-Telegram-Init-Data`
+
+## Локальная разработка
+
+### Вариант 1: Браузер (по умолчанию)
+
+```bash
+npm start
+# откройте http://localhost:4200
+```
+
+Вне Telegram автоматически включаются **mock-данные** (`useMocksOutsideTelegram: true`). Сверху появится жёлтый баннер «Dev-режим».
+
+### Вариант 2: Браузер + реальный API
+
+Скопируйте `initData` из Telegram и сохраните в DevTools:
+
+```javascript
+localStorage.setItem('DEV_INIT_DATA', 'ваша_строка_initData');
+location.reload();
+```
+
+Бэкенд должен принять эту строку. Чтобы сбросить:
+
+```javascript
+localStorage.removeItem('DEV_INIT_DATA');
+location.reload();
+```
+
+### Вариант 3: Telegram + ngrok
+
+```bash
+npm start
+ngrok http 4200
+```
+
+URL от ngrok укажите в BotFather и откройте Mini App из Telegram — будет реальный `initData` и API.
+
+### Вариант 4: Всегда mock
+
+В `src/environments/environment.ts`:
+
+```typescript
+useMocks: true,
+```
 
 ## Работа с двумя репозиториями в одном чате Cursor
 

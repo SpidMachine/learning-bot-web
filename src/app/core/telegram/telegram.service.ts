@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { TelegramThemeParams, TelegramUser, TelegramWebApp } from './telegram.types';
+import { resolveInitData } from './telegram.utils';
 
 @Injectable({ providedIn: 'root' })
 export class TelegramService {
@@ -32,7 +33,11 @@ export class TelegramService {
   }
 
   get initData(): string {
-    return this.webApp?.initData ?? 'mock_init_data_for_dev';
+    return resolveInitData(this.webApp?.initData);
+  }
+
+  get isBrowserDevMode(): boolean {
+    return !this.isAvailable() && !this.initData;
   }
 
   hapticImpact(style: 'light' | 'medium' | 'heavy' = 'light'): void {
