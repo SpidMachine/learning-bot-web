@@ -39,7 +39,7 @@ npm start
 Проверка (401 — это нормально, бэкенд жив):
 
 ```powershell
-curl http://127.0.0.1:8080/api/v1/courses
+curl http://127.0.0.1:8080/api/v1/topics
 ```
 
 **Терминал 2 — фронт**
@@ -152,13 +152,18 @@ cp src/environments/environment.local.example.ts src/environments/environment.lo
 
 | Метод | Путь | Описание |
 |-------|------|----------|
-| GET | `/api/v1/me` | Профиль пользователя |
-| GET | `/api/v1/courses` | Список курсов |
-| GET | `/api/v1/courses/:id` | Курс с уроками |
-| GET | `/api/v1/lessons/:id` | Контент урока |
-| POST | `/api/v1/lessons/:id/complete` | Завершить урок |
-| GET | `/api/v1/quizzes/:id` | Квиз |
-| POST | `/api/v1/quizzes/:id/submit` | Отправить ответы |
+| GET | `/api/v1/me` | Профиль Telegram-пользователя |
+| GET | `/api/v1/topics` | Список тем |
+| GET | `/api/v1/stats` | Статистика обучения |
+| GET | `/api/v1/achievements` | Разблокированные достижения |
+| GET | `/api/v1/sessions/current` | Текущая сессия (5 вопросов) |
+| POST | `/api/v1/sessions` | Начать сессию |
+| POST | `/api/v1/quiz/answers` | Отправить ответ |
+| POST | `/api/v1/quiz/pick` | Случайный вопрос |
+| POST | `/api/v1/quiz/review` | Вопрос на повторение |
+| GET | `/api/v1/quiz/items/:itemId` | Вопрос по ID |
+| GET/POST | `/api/v1/bookmarks`, `/api/v1/bookmarks/:itemId` | Закладки |
+| GET/PATCH | `/api/v1/settings` | Настройки пользователя |
 
 Контракт: `docs/openapi.json` (копия из learning-bot-api).
 

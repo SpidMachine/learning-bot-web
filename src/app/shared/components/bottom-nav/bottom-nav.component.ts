@@ -34,7 +34,7 @@ interface NavItem {
 export class BottomNavComponent {
   readonly items: NavItem[] = [
     { path: '/', label: 'Главная', icon: '🏠' },
-    { path: '/courses', label: 'Курсы', icon: '📚' },
+    { path: '/topics', label: 'Темы', icon: '📚' },
     { path: '/profile', label: 'Профиль', icon: '👤' },
   ];
 }

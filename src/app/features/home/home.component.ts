@@ -1,59 +1,67 @@
+import { DecimalPipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LEARNING_API } from '../../core/api/learning-api.interface';
-import { TelegramService } from '../../core/telegram/telegram.service';
 import { CardComponent } from '../../shared/components/card/card.component';
 import { ProgressBarComponent } from '../../shared/components/progress-bar/progress-bar.component';
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
-import { UserProfile } from '../../shared/models/learning.models';
+import { HomeDashboard } from '../../shared/models/learning.models';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink, CardComponent, ProgressBarComponent, SkeletonComponent],
+  imports: [RouterLink, CardComponent, ProgressBarComponent, SkeletonComponent, DecimalPipe],
   template: `
     <div class="px-4 pt-6">
       @if (loading()) {
         <app-skeleton [lines]="4" />
-      } @else if (profile()) {
+      } @else if (dashboard()) {
         <header class="mb-6">
           <p class="text-sm text-[var(--tg-hint)]">Добро пожаловать</p>
           <h1 class="text-2xl font-bold text-[var(--tg-text)]">
-            {{ greeting() }}, {{ profile()!.firstName }}!
+            {{ greeting() }}, {{ dashboard()!.me.firstName }}!
           </h1>
         </header>
 
         <div class="mb-6 grid grid-cols-3 gap-3">
           <div class="rounded-2xl bg-[var(--tg-secondary-bg)] p-3 text-center">
-            <p class="text-2xl font-bold text-[var(--tg-button)]">{{ profile()!.streak }}</p>
+            <p class="text-2xl font-bold text-[var(--tg-button)]">
+              {{ dashboard()!.stats.streakDays }}
+            </p>
             <p class="text-xs text-[var(--tg-hint)]">дней подряд</p>
           </div>
           <div class="rounded-2xl bg-[var(--tg-secondary-bg)] p-3 text-center">
-            <p class="text-2xl font-bold text-[var(--tg-accent)]">{{ profile()!.xp }}</p>
-            <p class="text-xs text-[var(--tg-hint)]">XP</p>
+            <p class="text-2xl font-bold text-[var(--tg-accent)]">
+              {{ dashboard()!.stats.accuracy | number: '1.0-0' }}%
+            </p>
+            <p class="text-xs text-[var(--tg-hint)]">точность</p>
           </div>
           <div class="rounded-2xl bg-[var(--tg-secondary-bg)] p-3 text-center">
             <p class="text-2xl font-bold text-[var(--tg-success)]">
-              {{ profile()!.completedLessons }}
+              {{ dashboard()!.stats.totalAnswered }}
             </p>
-            <p class="text-xs text-[var(--tg-hint)]">уроков</p>
+            <p class="text-xs text-[var(--tg-hint)]">ответов</p>
           </div>
         </div>
 
-        @if (profile()!.continueLesson) {
+        @if (dashboard()!.session && !dashboard()!.session!.finished) {
           <section class="mb-6">
-            <h2 class="mb-3 text-lg font-semibold">Продолжить обучение</h2>
-            <a [routerLink]="['/lessons', profile()!.continueLesson!.id]">
+            <h2 class="mb-3 text-lg font-semibold">Продолжить сессию</h2>
+            <a routerLink="/session">
               <app-card>
                 <div class="flex items-center gap-4">
-                  <span class="text-3xl">📖</span>
+                  <span class="text-3xl">🎯</span>
                   <div class="flex-1">
                     <p class="text-xs text-[var(--tg-hint)]">
-                      {{ profile()!.continueLesson!.courseTitle }}
+                      Вопрос {{ dashboard()!.session!.currentIndex }} / {{ dashboard()!.session!.total }}
                     </p>
-                    <p class="font-semibold">{{ profile()!.continueLesson!.title }}</p>
+                    <p class="font-semibold line-clamp-2">
+                      {{ dashboard()!.session!.currentQuestion?.text }}
+                    </p>
                     <div class="mt-2">
-                      <app-progress-bar [value]="40" />
+                      <app-progress-bar
+                        [value]="(dashboard()!.session!.currentIndex / dashboard()!.session!.total) * 100"
+                      />
                     </div>
                   </div>
                   <span class="text-[var(--tg-button)]">→</span>
@@ -66,21 +74,23 @@ import { UserProfile } from '../../shared/models/learning.models';
         <section>
           <div class="mb-3 flex items-center justify-between">
             <h2 class="text-lg font-semibold">Быстрые действия</h2>
-            <a routerLink="/courses" class="text-sm text-[var(--tg-link)]">Все курсы</a>
+            <a routerLink="/topics" class="text-sm text-[var(--tg-link)]">Все темы</a>
           </div>
           <div class="grid grid-cols-2 gap-3">
-            <a routerLink="/courses">
+            <a routerLink="/topics">
               <app-card>
                 <span class="text-2xl">📚</span>
-                <p class="mt-2 font-medium">Курсы</p>
-                <p class="text-xs text-[var(--tg-hint)]">Выбрать направление</p>
+                <p class="mt-2 font-medium">Темы</p>
+                <p class="text-xs text-[var(--tg-hint)]">Начать сессию</p>
               </app-card>
             </a>
-            <a routerLink="/profile">
+            <a routerLink="/practice">
               <app-card>
-                <span class="text-2xl">🏆</span>
-                <p class="mt-2 font-medium">Достижения</p>
-                <p class="text-xs text-[var(--tg-hint)]">Ваш прогресс</p>
+                <span class="text-2xl">🔁</span>
+                <p class="mt-2 font-medium">Повторение</p>
+                <p class="text-xs text-[var(--tg-hint)]">
+                  {{ dashboard()!.stats.dueForReview }} на повтор
+                </p>
               </app-card>
             </a>
           </div>
@@ -91,15 +101,14 @@ import { UserProfile } from '../../shared/models/learning.models';
 })
 export class HomeComponent implements OnInit {
   private readonly api = inject(LEARNING_API);
-  private readonly telegram = inject(TelegramService);
 
   readonly loading = signal(true);
-  readonly profile = signal<UserProfile | null>(null);
+  readonly dashboard = signal<HomeDashboard | null>(null);
 
   ngOnInit(): void {
-    this.api.getProfile().subscribe({
-      next: (res: UserProfile) => {
-        this.profile.set(res);
+    this.api.getHomeDashboard().subscribe({
+      next: (res: HomeDashboard) => {
+        this.dashboard.set(res);
         this.loading.set(false);
       },
       error: () => {

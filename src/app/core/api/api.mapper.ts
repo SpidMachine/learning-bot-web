@@ -1,111 +1,88 @@
 import {
-  ApiCourseDetailDto,
-  ApiCourseDto,
-  ApiLessonDto,
-  ApiQuizDto,
-  ApiQuizSubmitRequestDto,
-  ApiQuizSubmitResultDto,
-  ApiUserProfileDto,
+  AnswerResultDto,
+  QuestionDto,
+  QuizPickDto,
+  SessionDto,
+  StatsDto,
+  TopicDto,
+  TopicStatsDto,
 } from '../../shared/models/api.dto';
 import {
-  Course,
-  CourseDetail,
-  Lesson,
-  Quiz,
-  QuizSubmitRequest,
-  QuizSubmitResult,
-  UserProfile,
+  AnswerResult,
+  Question,
+  Session,
+  Topic,
+  UserMe,
+  UserStats,
 } from '../../shared/models/learning.models';
 
-function normalizeContent(content: string[] | string): string[] {
-  if (Array.isArray(content)) {
-    return content;
-  }
-
-  return content
-    .split(/\n{2,}/)
-    .map((block) => block.trim())
-    .filter(Boolean);
+export function mapQuestion(dto: QuestionDto): Question {
+  return {
+    id: dto.id,
+    kind: dto.kind,
+    topics: dto.topics,
+    difficulty: dto.difficulty,
+    text: dto.question,
+    options: dto.options,
+    tags: dto.tags,
+    snippet: dto.snippet,
+  };
 }
 
-function normalizeCorrectAnswers(
-  answers: Record<string, number> | Record<number, number>,
-): Record<number, number> {
-  return Object.entries(answers).reduce<Record<number, number>>((acc, [key, value]) => {
-    acc[Number(key)] = value;
-    return acc;
-  }, {});
+export function mapSession(dto: SessionDto): Session {
+  return {
+    mode: dto.mode,
+    currentIndex: dto.currentIndex,
+    total: dto.total,
+    correctCount: dto.correctCount,
+    finished: dto.finished,
+    currentQuestion: dto.currentQuestion ? mapQuestion(dto.currentQuestion) : undefined,
+  };
 }
 
-export function mapUserProfile(dto: ApiUserProfileDto): UserProfile {
+export function mapTopic(dto: TopicDto, stats?: TopicStatsDto): Topic {
+  return {
+    key: dto.key,
+    title: dto.title,
+    emoji: dto.emoji,
+    answered: stats?.answered,
+    correct: stats?.correct,
+    accuracy: stats?.accuracy,
+  };
+}
+
+export function mapStats(dto: StatsDto): UserStats {
+  return {
+    totalAnswered: dto.totalAnswered,
+    totalCorrect: dto.totalCorrect,
+    accuracy: dto.accuracy,
+    streakDays: dto.streakDays,
+    dueForReview: dto.dueForReview,
+    flashcardsDone: dto.flashcardsDone,
+    weeklyGoal: dto.weeklyGoal,
+    weekAnswered: dto.weekAnswered,
+  };
+}
+
+export function mapMe(dto: { id: number; firstName: string; username?: string }): UserMe {
   return {
     id: dto.id,
     firstName: dto.firstName,
-    lastName: dto.lastName,
     username: dto.username,
-    xp: dto.xp,
-    streak: dto.streak,
-    completedLessons: dto.completedLessons,
-    achievements: dto.achievements,
-    continueLesson: dto.continueLesson,
   };
 }
 
-export function mapCourse(dto: ApiCourseDto): Course {
+export function mapAnswerResult(dto: AnswerResultDto): AnswerResult {
   return {
-    id: dto.id,
-    title: dto.title,
-    description: dto.description,
-    progress: dto.progress,
-    lessonsCount: dto.lessonsCount,
-    completedLessons: dto.completedLessons,
-    imageEmoji: dto.imageEmoji,
+    correct: dto.correct,
+    correctIndex: dto.correctIndex,
+    explanation: dto.explanation,
+    extendedExplanation: dto.extendedExplanation,
+    wrongOptions: dto.wrongOptions,
+    newAchievements: dto.newAchievements,
   };
 }
 
-export function mapCourseDetail(dto: ApiCourseDetailDto): CourseDetail {
-  return {
-    ...mapCourse(dto),
-    lessons: dto.lessons,
-  };
-}
-
-export function mapLesson(dto: ApiLessonDto): Lesson {
-  return {
-    id: dto.id,
-    courseId: dto.courseId,
-    title: dto.title,
-    content: normalizeContent(dto.content),
-    nextLessonId: dto.nextLessonId,
-    quizId: dto.quizId,
-  };
-}
-
-export function mapQuiz(dto: ApiQuizDto): Quiz {
-  return {
-    id: dto.id,
-    title: dto.title,
-    questions: dto.questions,
-  };
-}
-
-export function mapQuizSubmitRequest(request: QuizSubmitRequest): ApiQuizSubmitRequestDto {
-  const answers = Object.entries(request.answers).reduce<Record<string, number>>(
-    (acc, [questionId, optionId]) => {
-      acc[questionId] = optionId;
-      return acc;
-    },
-    {},
-  );
-
-  return { answers };
-}
-
-export function mapQuizSubmitResult(dto: ApiQuizSubmitResultDto): QuizSubmitResult {
-  return {
-    score: dto.score,
-    total: dto.total,
-    passed: dto.passed,
-    correctAnswers: normalizeCorrectAnswers(dto.correctAnswers),
-  };
+export function mapQuizPick(dto: QuizPickDto): Question {
+  return mapQuestion(dto.question);
 }

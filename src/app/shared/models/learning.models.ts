@@ -1,82 +1,67 @@
-export interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  unlocked: boolean;
-  emoji: string;
-}
-
-export interface LessonSummary {
-  id: number;
-  title: string;
-  order: number;
-  completed: boolean;
-  quizId?: number;
-}
-
-export interface Course {
-  id: number;
-  title: string;
-  description: string;
-  progress: number;
-  lessonsCount: number;
-  completedLessons: number;
-  imageEmoji: string;
-}
-
-export interface CourseDetail extends Course {
-  lessons: LessonSummary[];
-}
-
-export interface UserProfile {
+export interface UserMe {
   id: number;
   firstName: string;
-  lastName?: string;
   username?: string;
-  xp: number;
-  streak: number;
-  completedLessons: number;
-  achievements: Achievement[];
-  continueLesson?: LessonSummary & { courseTitle: string; courseId: number };
 }
 
-export interface Lesson {
-  id: number;
-  courseId: number;
+export interface Topic {
+  key: string;
   title: string;
-  content: string[];
-  nextLessonId?: number;
-  quizId?: number;
+  emoji: string;
+  answered?: number;
+  correct?: number;
+  accuracy?: number;
 }
 
-export interface QuizOption {
-  id: number;
+export interface UserStats {
+  totalAnswered: number;
+  totalCorrect: number;
+  accuracy: number;
+  streakDays: number;
+  dueForReview: number;
+  flashcardsDone: number;
+  weeklyGoal: number;
+  weekAnswered: number;
+}
+
+export interface Question {
+  id: string;
+  kind: string;
+  topics: string[];
+  difficulty: string;
   text: string;
+  options: string[];
+  tags: string[];
+  snippet?: string;
 }
 
-export interface QuizQuestion {
-  id: number;
-  text: string;
-  options: QuizOption[];
-}
-
-export interface QuizQuestionWithAnswer extends QuizQuestion {
-  correctOptionId: number;
-}
-
-export interface Quiz {
-  id: number;
-  title: string;
-  questions: QuizQuestion[];
-}
-
-export interface QuizSubmitRequest {
-  answers: Record<number, number>;
-}
-
-export interface QuizSubmitResult {
-  score: number;
+export interface Session {
+  mode: string;
+  currentIndex: number;
   total: number;
-  passed: boolean;
-  correctAnswers: Record<number, number>;
+  correctCount: number;
+  finished: boolean;
+  currentQuestion?: Question;
+}
+
+export interface AnswerResult {
+  correct: boolean;
+  correctIndex: number;
+  explanation: string;
+  extendedExplanation?: string;
+  wrongOptions?: string[];
+  newAchievements?: string[];
+}
+
+export interface HomeDashboard {
+  me: UserMe;
+  stats: UserStats;
+  session: Session | null;
+  achievements: string[];
+}
+
+export interface ProfileView {
+  me: UserMe;
+  stats: UserStats;
+  achievements: string[];
 }
