@@ -1,4 +1,4 @@
-/** DTO из docs/openapi.json (learning-bot-api) */
+/** DTO из docs/openapi.json (learning-bot-api v1.2.0) */
 
 export interface MeDto {
   id: number;
@@ -56,10 +56,12 @@ export interface SessionDto {
 export interface StartSessionRequestDto {
   mode?: string;
   topic?: string;
+  subtopic?: string;
 }
 
 export interface QuizPickRequestDto {
   topic?: string;
+  subtopic?: string;
   kind?: string;
   tag?: string;
 }
@@ -109,14 +111,27 @@ export interface ApiErrorDto {
   message: string;
 }
 
-export type NextActionTypeDto = 'session' | 'review' | 'quiz' | 'topic';
+export type RoadmapNextActionTypeDto =
+  | 'session'
+  | 'review'
+  | 'quiz'
+  | 'topic'
+  | 'subtopic';
 
-export interface NextActionDto {
-  type: NextActionTypeDto;
+export interface RoadmapNextActionDto {
+  type: RoadmapNextActionTypeDto;
+  topic?: string;
+  subtopic?: string;
   label: string;
-  topicKey?: string;
   title?: string;
   subtitle?: string;
+}
+
+export type NextActionTypeDto = RoadmapNextActionTypeDto;
+
+export interface NextActionDto extends RoadmapNextActionDto {
+  /** @deprecated используйте topic */
+  topicKey?: string;
 }
 
 export interface DashboardDto {
@@ -127,8 +142,67 @@ export interface DashboardDto {
   nextAction: NextActionDto;
 }
 
+export type RoadmapNodeStatusDto = 'available' | 'in_progress' | 'completed';
+
+export interface RoadmapNodeDto {
+  key: string;
+  title: string;
+  emoji: string;
+  percent: number;
+  status: RoadmapNodeStatusDto;
+  subtopicCount?: number;
+  completedSubtopics?: number;
+  currentSubtopicKey?: string;
+}
+
+export interface RoadmapDto {
+  title?: string;
+  subtitle?: string;
+  nodes: RoadmapNodeDto[];
+}
+
+export interface TopicDetailDto {
+  key: string;
+  title: string;
+  emoji: string;
+  overallPercent: number;
+  subtopicCount?: number;
+  completedSubtopics?: number;
+  currentSubtopicKey?: string;
+}
+
+export type SubtopicStatusDto = 'locked' | 'available' | 'in_progress' | 'completed';
+
+export interface SubtopicTotalsDto {
+  answered?: number;
+  total?: number;
+  correct?: number;
+}
+
+export interface SubtopicRoadmapNodeDto {
+  key: string;
+  title: string;
+  emoji: string;
+  description?: string;
+  status: SubtopicStatusDto;
+  percent: number;
+  totals?: SubtopicTotalsDto;
+  nextAction?: RoadmapNextActionDto;
+}
+
+export interface TopicRoadmapDto {
+  topicKey: string;
+  title: string;
+  emoji: string;
+  overallPercent: number;
+  currentSubtopicKey?: string;
+  subtopics: SubtopicRoadmapNodeDto[];
+}
+
+/** @deprecated legacy v1.0 — только для normalize */
 export type RoadmapStageStatusDto = 'locked' | 'active' | 'completed';
 
+/** @deprecated legacy v1.0 — только для normalize */
 export interface RoadmapStageDto {
   order: number;
   key: string;
@@ -139,11 +213,4 @@ export interface RoadmapStageDto {
   topics: string[];
   progress?: number;
   topicKey?: string;
-}
-
-export interface RoadmapDto {
-  title: string;
-  subtitle?: string;
-  stages: RoadmapStageDto[];
-  currentStageOrder?: number;
 }

@@ -17,8 +17,8 @@ export const routes: Routes = [
       },
       {
         path: 'topics',
-        loadComponent: () =>
-          import('./features/topics/topics.component').then((m) => m.TopicsComponent),
+        redirectTo: 'roadmap',
+        pathMatch: 'full',
       },
       {
         path: 'profile',

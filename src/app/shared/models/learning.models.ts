@@ -53,11 +53,14 @@ export interface AnswerResult {
   newAchievements?: string[];
 }
 
-export type NextActionType = 'session' | 'review' | 'quiz' | 'topic';
+export type NextActionType = 'session' | 'review' | 'quiz' | 'topic' | 'subtopic';
 
 export interface NextAction {
   type: NextActionType;
   label: string;
+  topic?: string;
+  subtopic?: string;
+  /** @deprecated используйте topic */
   topicKey?: string;
   title?: string;
   subtitle?: string;
@@ -80,23 +83,59 @@ export interface ProfileView {
   achievements: string[];
 }
 
-export type RoadmapStageStatus = 'locked' | 'active' | 'completed';
+export type RoadmapNodeStatus = 'available' | 'in_progress' | 'completed';
 
-export interface RoadmapStage {
-  order: number;
+export interface RoadmapNode {
   key: string;
   title: string;
   emoji: string;
-  color: string;
-  status: RoadmapStageStatus;
-  topics: string[];
-  progress?: number;
-  topicKey?: string;
+  percent: number;
+  status: RoadmapNodeStatus;
+  subtopicCount?: number;
+  completedSubtopics?: number;
+  currentSubtopicKey?: string;
 }
 
 export interface Roadmap {
-  title: string;
+  title?: string;
   subtitle?: string;
-  stages: RoadmapStage[];
-  currentStageOrder?: number;
+  nodes: RoadmapNode[];
+}
+
+export interface TopicDetail {
+  key: string;
+  title: string;
+  emoji: string;
+  overallPercent: number;
+  subtopicCount?: number;
+  completedSubtopics?: number;
+  currentSubtopicKey?: string;
+}
+
+export type SubtopicStatus = 'locked' | 'available' | 'in_progress' | 'completed';
+
+export interface SubtopicTotals {
+  answered?: number;
+  total?: number;
+  correct?: number;
+}
+
+export interface SubtopicRoadmapNode {
+  key: string;
+  title: string;
+  emoji: string;
+  description?: string;
+  status: SubtopicStatus;
+  percent: number;
+  totals?: SubtopicTotals;
+  nextAction?: NextAction;
+}
+
+export interface TopicRoadmap {
+  topicKey: string;
+  title: string;
+  emoji: string;
+  overallPercent: number;
+  currentSubtopicKey?: string;
+  subtopics: SubtopicRoadmapNode[];
 }

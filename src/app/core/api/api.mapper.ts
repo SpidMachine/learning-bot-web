@@ -4,10 +4,14 @@ import {
   QuestionDto,
   QuizPickDto,
   RoadmapDto,
-  RoadmapStageDto,
+  RoadmapNodeDto,
+  RoadmapNextActionDto,
   SessionDto,
   StatsDto,
+  SubtopicRoadmapNodeDto,
+  TopicDetailDto,
   TopicDto,
+  TopicRoadmapDto,
   TopicStatsDto,
 } from '../../shared/models/api.dto';
 import {
@@ -16,9 +20,12 @@ import {
   NextAction,
   Question,
   Roadmap,
-  RoadmapStage,
+  RoadmapNode,
   Session,
+  SubtopicRoadmapNode,
   Topic,
+  TopicDetail,
+  TopicRoadmap,
   UserMe,
   UserStats,
 } from '../../shared/models/learning.models';
@@ -94,17 +101,7 @@ export function mapQuizPick(dto: QuizPickDto): Question {
   return mapQuestion(dto.question);
 }
 
-export function mapDashboard(dto: DashboardDto): Dashboard {
-  return {
-    me: mapMe(dto.me),
-    stats: mapStats(dto.stats),
-    session: dto.session ? mapSession(dto.session) : null,
-    achievements: dto.achievements,
-    nextAction: mapNextAction(dto.nextAction),
-  };
-}
-
-export function mapNextAction(dto?: DashboardDto['nextAction']): NextAction {
+export function mapNextAction(dto?: RoadmapNextActionDto | DashboardDto['nextAction']): NextAction {
   if (!dto?.type) {
     return {
       type: 'topic',
@@ -113,34 +110,82 @@ export function mapNextAction(dto?: DashboardDto['nextAction']): NextAction {
     };
   }
 
+  const topic = dto.topic ?? ('topicKey' in dto ? dto.topicKey : undefined);
+
   return {
     type: dto.type,
     label: dto.label ?? 'Продолжить',
-    topicKey: dto.topicKey,
+    topic,
+    topicKey: topic,
+    subtopic: dto.subtopic,
     title: dto.title,
     subtitle: dto.subtitle,
+  };
+}
+
+export function mapDashboard(dto: DashboardDto): Dashboard {
+  return {
+    me: mapMe(dto.me),
+    stats: mapStats(dto.stats),
+    session: dto.session ? mapSession(dto.session) : null,
+    achievements: dto.achievements ?? [],
+    nextAction: mapNextAction(dto.nextAction),
+  };
+}
+
+export function mapRoadmapNode(dto: RoadmapNodeDto): RoadmapNode {
+  return {
+    key: dto.key,
+    title: dto.title,
+    emoji: dto.emoji,
+    percent: dto.percent,
+    status: dto.status,
+    subtopicCount: dto.subtopicCount,
+    completedSubtopics: dto.completedSubtopics,
+    currentSubtopicKey: dto.currentSubtopicKey,
   };
 }
 
 export function mapRoadmap(dto: RoadmapDto): Roadmap {
   return {
-    title: dto.title ?? 'Learning Roadmap',
+    title: dto.title,
     subtitle: dto.subtitle,
-    currentStageOrder: dto.currentStageOrder,
-    stages: (dto.stages ?? []).map(mapRoadmapStage),
+    nodes: (dto.nodes ?? []).map(mapRoadmapNode),
   };
 }
 
-export function mapRoadmapStage(dto: RoadmapStageDto): RoadmapStage {
+export function mapTopicDetail(dto: TopicDetailDto): TopicDetail {
   return {
-    order: dto.order,
     key: dto.key,
     title: dto.title,
     emoji: dto.emoji,
-    color: dto.color,
+    overallPercent: dto.overallPercent,
+    subtopicCount: dto.subtopicCount,
+    completedSubtopics: dto.completedSubtopics,
+    currentSubtopicKey: dto.currentSubtopicKey,
+  };
+}
+
+export function mapSubtopicNode(dto: SubtopicRoadmapNodeDto): SubtopicRoadmapNode {
+  return {
+    key: dto.key,
+    title: dto.title,
+    emoji: dto.emoji,
+    description: dto.description,
     status: dto.status,
-    topics: dto.topics,
-    progress: dto.progress,
+    percent: dto.percent,
+    totals: dto.totals,
+    nextAction: dto.nextAction ? mapNextAction(dto.nextAction) : undefined,
+  };
+}
+
+export function mapTopicRoadmap(dto: TopicRoadmapDto): TopicRoadmap {
+  return {
     topicKey: dto.topicKey,
+    title: dto.title,
+    emoji: dto.emoji,
+    overallPercent: dto.overallPercent,
+    currentSubtopicKey: dto.currentSubtopicKey,
+    subtopics: (dto.subtopics ?? []).map(mapSubtopicNode),
   };
 }

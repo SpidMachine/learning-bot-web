@@ -1,18 +1,25 @@
-import { DecimalPipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { getNextActionRoute } from '../../core/api/next-action.util';
+import { startFromNextAction, nextActionIcon } from '../../core/api/next-action.util';
 import { LEARNING_API } from '../../core/api/learning-api.interface';
 import { CardComponent } from '../../shared/components/card/card.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { ProgressBarComponent } from '../../shared/components/progress-bar/progress-bar.component';
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
 import { Dashboard } from '../../shared/models/learning.models';
+import { DecimalPipe } from '@angular/common';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink, CardComponent, ProgressBarComponent, SkeletonComponent, EmptyStateComponent, DecimalPipe],
+  imports: [
+    RouterLink,
+    CardComponent,
+    ProgressBarComponent,
+    SkeletonComponent,
+    EmptyStateComponent,
+    DecimalPipe,
+  ],
   template: `
     <div class="px-4 pt-6">
       @if (loading()) {
@@ -57,17 +64,17 @@ import { Dashboard } from '../../shared/models/learning.models';
           <button type="button" class="w-full text-left" (click)="continueLearning()">
             <app-card>
               <div class="flex items-center gap-4">
-                <span class="text-3xl">{{ nextActionIcon() }}</span>
+                <span class="text-3xl">{{ nextActionIcon(dashboard()!.nextAction.type) }}</span>
                 <div class="flex-1">
-                  <p class="font-semibold">{{ dashboard()!.nextAction?.label ?? 'Продолжить' }}</p>
-                  @if (dashboard()!.nextAction?.title) {
+                  <p class="font-semibold">{{ dashboard()!.nextAction.label }}</p>
+                  @if (dashboard()!.nextAction.title) {
                     <p class="text-sm text-[var(--tg-text)]">
-                      {{ dashboard()!.nextAction?.title }}
+                      {{ dashboard()!.nextAction.title }}
                     </p>
                   }
-                  @if (dashboard()!.nextAction?.subtitle) {
+                  @if (dashboard()!.nextAction.subtitle) {
                     <p class="text-xs text-[var(--tg-hint)]">
-                      {{ dashboard()!.nextAction?.subtitle }}
+                      {{ dashboard()!.nextAction.subtitle }}
                     </p>
                   }
                   @if (dashboard()!.session && !dashboard()!.session!.finished) {
@@ -122,6 +129,8 @@ export class HomeComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly dashboard = signal<Dashboard | null>(null);
 
+  readonly nextActionIcon = nextActionIcon;
+
   ngOnInit(): void {
     this.api.getDashboard().subscribe({
       next: (res: Dashboard) => {
@@ -144,31 +153,9 @@ export class HomeComponent implements OnInit {
       return;
     }
 
-    const route = getNextActionRoute(dashboard.nextAction);
-
-    if (Array.isArray(route)) {
-      this.router.navigate(route);
-      return;
-    }
-
-    this.router.navigate([route]);
-  }
-
-  nextActionIcon(): string {
-    const type = this.dashboard()?.nextAction.type;
-
-    switch (type) {
-      case 'session':
-        return '🎯';
-      case 'review':
-        return '🔁';
-      case 'quiz':
-        return '❓';
-      case 'topic':
-        return '📚';
-      default:
-        return '▶️';
-    }
+    startFromNextAction(this.api, this.router, dashboard.nextAction, () => {
+      this.error.set('Не удалось начать сессию. Попробуйте ещё раз.');
+    });
   }
 
   greeting(): string {
