@@ -20,7 +20,7 @@ npm start
 
 Приложение откроется на `http://localhost:4200`.
 
-По умолчанию включён **mock-режим** (`environment.useMocks: true`) — UI работает без backend.
+По умолчанию фронт ходит в **learning-bot-api** (`useMocks: false`). Запустите бэкенд на `http://localhost:8080` перед `npm start`.
 
 ## Работа с двумя репозиториями в одном чате Cursor
 
@@ -49,21 +49,23 @@ cursor learning-bot-web/learning-bot.code-workspace
 ### Подключение к learning-bot-api
 
 1. Запустите API на `http://localhost:8080`
-2. В `src/environments/environment.ts` установите:
+2. Запустите фронт (proxy уже настроен в `angular.json`):
+
+```bash
+npm start
+```
+
+Конфигурация в `src/environments/environment.ts`:
 
 ```typescript
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:8080',
+  apiBaseUrl: '/api/v1',
   useMocks: false,
 };
 ```
 
-3. Запустите с прокси:
-
-```bash
-ng serve --proxy-config proxy.conf.json
-```
+Для работы без бэкенда установите `useMocks: true`.
 
 ## API-контракт
 
@@ -77,7 +79,9 @@ ng serve --proxy-config proxy.conf.json
 | GET | `/api/v1/quizzes/:id` | Квиз |
 | POST | `/api/v1/quizzes/:id/submit` | Отправить ответы |
 
-Авторизация: заголовок `Authorization: tma <initData>`. Backend должен валидировать `initData` через HMAC с bot token.
+Авторизация: заголовок `X-Telegram-Init-Data` с `Telegram.WebApp.initData`.
+
+Контракт API: `docs/openapi.json` (копия из learning-bot-api).
 
 ## Настройка Telegram Mini App
 

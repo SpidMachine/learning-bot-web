@@ -10,8 +10,10 @@ alwaysApply: true
 ## learning-bot-web (этот репозиторий)
 - Angular 19 Telegram Mini App
 - GitHub Pages: `https://spidmachine.github.io/learning-bot-web/`
-- Авторизация API: заголовок `Authorization: tma <initData>`
+- Авторизация API: заголовок `X-Telegram-Init-Data` (Telegram.WebApp.initData)
+- Base URL API: `/api/v1` (dev через proxy → `http://localhost:8080`)
 - Mock-режим: `environment.useMocks` в `src/environments/`
+- Контракт API: `docs/openapi.json`, правило `.cursor/rules/learning-bot-api-contract.mdc`
 
 ## learning-bot-api (соседняя папка)
 - Backend + Telegram-бот (единственный polling-процесс с BOT_TOKEN)
