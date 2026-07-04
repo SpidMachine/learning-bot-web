@@ -190,7 +190,9 @@ export class HttpLearningApiService implements LearningApi {
   private toDashboard(raw: unknown): Dashboard {
     const dashboard = mapDashboard(normalizeDashboardDto(raw));
 
-    if (!dashboard.nextAction?.type || !dashboard.nextAction.label) {
+    if (dashboard.session && !dashboard.session.finished) {
+      dashboard.nextAction = inferNextAction(dashboard.session, dashboard.stats);
+    } else if (!dashboard.nextAction?.type || !dashboard.nextAction.label) {
       dashboard.nextAction = inferNextAction(dashboard.session, dashboard.stats);
     }
 

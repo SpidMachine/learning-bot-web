@@ -116,9 +116,14 @@ export class TopicDetailComponent implements OnInit {
 
     this.startingKey.set(subtopic.key);
 
-    startSubtopicSession(this.api, this.router, this.topicKey, subtopic.key, () => {
-      this.startingKey.set(null);
-      this.error.set('Не удалось начать сессию.');
+    startSubtopicSession(this.api, this.router, this.topicKey, subtopic.key, {
+      onError: (message: string) => {
+        this.startingKey.set(null);
+        this.error.set(message);
+      },
+      onFinally: () => {
+        this.startingKey.set(null);
+      },
     });
   }
 

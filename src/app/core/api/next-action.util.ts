@@ -1,6 +1,8 @@
 import { Router } from '@angular/router';
+import { Observable, switchMap, of } from 'rxjs';
 import { LearningApi } from './learning-api.interface';
 import { NextAction, Session, UserStats } from '../../shared/models/learning.models';
+import { StartSessionRequestDto } from '../../shared/models/api.dto';
 
 export function getNextActionRoute(action: NextAction): string | string[] {
   switch (action.type) {
@@ -50,18 +52,92 @@ export function inferNextAction(session: Session | null, stats: UserStats): Next
   };
 }
 
+/** Активная сессия важнее nextAction от API — иначе лишний POST /sessions */
+export function resolveNextAction(
+  nextAction: NextAction,
+  session: Session | null,
+  stats: UserStats,
+): NextAction {
+  if (session && !session.finished) {
+    return inferNextAction(session, stats);
+  }
+
+  return nextAction;
+}
+
+export function startOrResumeSession(
+  api: LearningApi,
+  router: Router,
+  request: StartSessionRequestDto,
+  callbacks?: { onError?: (message: string) => void; onFinally?: () => void },
+): void {
+  api
+    .getCurrentSession()
+    .pipe(
+      switchMap((current: Session | null) => {
+        if (current && !current.finished) {
+          return of({ resumed: true as const });
+        }
+
+        return api.startSession(request).pipe(
+          switchMap(() => of({ resumed: false as const })),
+        );
+      }),
+    )
+    .subscribe({
+      next: () => {
+        router.navigate(['/session']);
+        callbacks?.onFinally?.();
+      },
+      error: (error: { status?: number; message?: string }) => {
+        if (error?.status === 0 || error?.status === 524) {
+          callbacks?.onError?.(
+            'Бэкенд не ответил вовремя. Убедитесь, что learning-bot-api запущен на :8080.',
+          );
+        } else {
+          callbacks?.onError?.('Не удалось начать сессию. Попробуйте ещё раз.');
+        }
+
+        callbacks?.onFinally?.();
+      },
+    });
+}
+
 export function startFromNextAction(
   api: LearningApi,
   router: Router,
   action: NextAction,
-  onError?: () => void,
+  session: Session | null = null,
+  stats?: UserStats,
+  callbacks?: { onError?: (message: string) => void; onFinally?: () => void },
 ): void {
-  if (action.type === 'subtopic') {
-    const topic = action.topic ?? action.topicKey;
-    const subtopic = action.subtopic;
+  const resolved = resolveNextAction(
+    action,
+    session,
+    stats ?? {
+      totalAnswered: 0,
+      totalCorrect: 0,
+      accuracy: 0,
+      streakDays: 0,
+      dueForReview: 0,
+      flashcardsDone: 0,
+      weeklyGoal: 0,
+      weekAnswered: 0,
+    },
+  );
+
+  if (resolved.type === 'session') {
+    router.navigate(['/session']);
+    callbacks?.onFinally?.();
+    return;
+  }
+
+  if (resolved.type === 'subtopic') {
+    const topic = resolved.topic ?? resolved.topicKey;
+    const subtopic = resolved.subtopic;
 
     if (!topic || !subtopic) {
-      const route = getNextActionRoute(action);
+      const route = getNextActionRoute(resolved);
 
       if (Array.isArray(route)) {
         router.navigate(route);
@@ -69,34 +145,23 @@ export function startFromNextAction(
         router.navigate([route]);
       }
 
+      callbacks?.onFinally?.();
       return;
     }
 
-    api.startSession({ mode: 'quiz', topic, subtopic }).subscribe({
-      next: () => {
-        router.navigate(['/session']);
-      },
-      error: () => {
-        onError?.();
-      },
-    });
-
+    startOrResumeSession(api, router, { mode: 'quiz', topic, subtopic }, callbacks);
     return;
   }
 
-  if (action.type === 'session') {
-    router.navigate(['/session']);
-    return;
-  }
-
-  const route = getNextActionRoute(action);
+  const route = getNextActionRoute(resolved);
 
   if (Array.isArray(route)) {
     router.navigate(route);
-    return;
+  } else {
+    router.navigate([route]);
   }
 
-  router.navigate([route]);
+  callbacks?.onFinally?.();
 }
 
 export function startSubtopicSession(
@@ -104,16 +169,9 @@ export function startSubtopicSession(
   router: Router,
   topic: string,
   subtopic: string,
-  onError?: () => void,
+  callbacks?: { onError?: (message: string) => void; onFinally?: () => void },
 ): void {
-  api.startSession({ mode: 'quiz', topic, subtopic }).subscribe({
-    next: () => {
-      router.navigate(['/session']);
-    },
-    error: () => {
-      onError?.();
-    },
-  });
+  startOrResumeSession(api, router, { mode: 'quiz', topic, subtopic }, callbacks);
 }
 
 export function nextActionIcon(type?: NextAction['type']): string {

@@ -61,12 +61,19 @@ import { DecimalPipe } from '@angular/common';
 
         <section class="mb-6">
           <h2 class="mb-3 text-lg font-semibold">Продолжить</h2>
-          <button type="button" class="w-full text-left" (click)="continueLearning()">
+          <button
+            type="button"
+            class="w-full text-left"
+            [disabled]="continuing()"
+            (click)="continueLearning()"
+          >
             <app-card>
               <div class="flex items-center gap-4">
                 <span class="text-3xl">{{ nextActionIcon(dashboard()!.nextAction.type) }}</span>
                 <div class="flex-1">
-                  <p class="font-semibold">{{ dashboard()!.nextAction.label }}</p>
+                  <p class="font-semibold">
+                    {{ continuing() ? 'Запуск...' : dashboard()!.nextAction.label }}
+                  </p>
                   @if (dashboard()!.nextAction.title) {
                     <p class="text-sm text-[var(--tg-text)]">
                       {{ dashboard()!.nextAction.title }}
@@ -127,6 +134,7 @@ export class HomeComponent implements OnInit {
 
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
+  readonly continuing = signal(false);
   readonly dashboard = signal<Dashboard | null>(null);
 
   readonly nextActionIcon = nextActionIcon;
@@ -148,13 +156,24 @@ export class HomeComponent implements OnInit {
   continueLearning(): void {
     const dashboard = this.dashboard();
 
-    if (!dashboard?.nextAction) {
-      this.router.navigate(['/roadmap']);
+    if (!dashboard?.nextAction || this.continuing()) {
+      if (!dashboard?.nextAction) {
+        this.router.navigate(['/roadmap']);
+      }
+
       return;
     }
 
-    startFromNextAction(this.api, this.router, dashboard.nextAction, () => {
-      this.error.set('Не удалось начать сессию. Попробуйте ещё раз.');
+    this.continuing.set(true);
+    this.error.set(null);
+
+    startFromNextAction(this.api, this.router, dashboard.nextAction, dashboard.session, dashboard.stats, {
+      onError: (message: string) => {
+        this.error.set(message);
+      },
+      onFinally: () => {
+        this.continuing.set(false);
+      },
     });
   }
 

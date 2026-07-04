@@ -32,7 +32,7 @@ import { AnswerResult, Question, Session } from '../../shared/models/learning.mo
         <button
           type="button"
           class="mt-6 w-full rounded-xl bg-[var(--tg-button)] py-3 font-medium text-[var(--tg-button-text)]"
-          (click)="goTopics()"
+          (click)="goRoadmap()"
         >
           К темам
         </button>
@@ -167,7 +167,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.telegramAvailable.set(this.telegram.isAvailable());
-    this.telegram.showBackButton(() => this.router.navigate(['/topics']));
+    this.telegram.showBackButton(() => this.router.navigate(['/roadmap']));
     this.loadSession();
   }
 
@@ -244,8 +244,8 @@ export class SessionComponent implements OnInit, OnDestroy {
     this.router.navigate(['/']);
   }
 
-  goTopics(): void {
-    this.router.navigate(['/topics']);
+  goRoadmap(): void {
+    void this.router.navigate(['/roadmap']);
   }
 
   private loadSession(): void {
