@@ -2,14 +2,16 @@ import { DecimalPipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { LEARNING_API } from '../../core/api/learning-api.interface';
+import { roadmapStatusLabel } from '../../core/api/next-action.util';
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
-import { Roadmap, RoadmapStage } from '../../shared/models/learning.models';
+import { ProgressBarComponent } from '../../shared/components/progress-bar/progress-bar.component';
+import { Roadmap, RoadmapNode } from '../../shared/models/learning.models';
 
 @Component({
   selector: 'app-roadmap',
   standalone: true,
-  imports: [SkeletonComponent, EmptyStateComponent, DecimalPipe],
+  imports: [SkeletonComponent, EmptyStateComponent, DecimalPipe, ProgressBarComponent],
   template: `
     <div class="roadmap-page min-h-screen pb-28">
       @if (loading()) {
@@ -29,98 +31,74 @@ import { Roadmap, RoadmapStage } from '../../shared/models/learning.models';
           <p class="text-xs font-semibold uppercase tracking-widest text-[var(--tg-hint)]">
             Learning Path
           </p>
-          <h1 class="mt-2 text-2xl font-bold text-[var(--tg-text)]">{{ roadmap()!.title }}</h1>
+          <h1 class="mt-2 text-2xl font-bold text-[var(--tg-text)]">
+            {{ roadmap()!.title ?? 'Роудмап' }}
+          </h1>
           @if (roadmap()!.subtitle) {
             <p class="mt-2 text-sm text-[var(--tg-hint)]">{{ roadmap()!.subtitle }}</p>
           }
-          <div class="motivation-badge mx-auto mt-4 max-w-xs rounded-2xl border border-dashed border-white/20 px-4 py-2 text-xs text-[var(--tg-hint)]">
-            ✨ Шаг за шагом. Наслаждайся путём!
-          </div>
         </header>
 
         <div class="relative px-4">
           <div class="road-line" aria-hidden="true"></div>
 
-          @if (roadmap()!.stages.length === 0) {
+          @if (roadmap()!.nodes.length === 0) {
             <app-empty-state
               emoji="🗺️"
-              title="Этапы пока не настроены"
-              description="Загляните позже или начните с раздела тем"
+              title="Темы пока не настроены"
+              description="Загляните позже — контент скоро появится"
             />
           }
 
-          @for (stage of roadmap()!.stages; track stage.key; let i = $index) {
-            <div
-              class="stage-row mb-6 flex gap-3"
-              [class.stage-row--right]="i % 2 === 1"
-            >
-              <div class="stage-track shrink-0">
+          @for (node of roadmap()!.nodes; track node.key; let i = $index) {
+            <div class="node-row mb-5 flex gap-3">
+              <div class="node-track shrink-0">
                 <div
-                  class="stage-pin"
-                  [style.background-color]="stage.color"
-                  [class.stage-pin--locked]="stage.status === 'locked'"
-                  [class.stage-pin--active]="stage.status === 'active'"
-                  [class.stage-pin--completed]="stage.status === 'completed'"
+                  class="node-pin"
+                  [class.node-pin--completed]="node.status === 'completed'"
+                  [class.node-pin--active]="node.status === 'in_progress'"
+                  [class.node-pin--available]="node.status === 'available'"
                 >
-                  @if (stage.status === 'completed') {
+                  @if (node.status === 'completed') {
                     <span>✓</span>
-                  } @else if (stage.status === 'locked') {
-                    <span>🔒</span>
                   } @else {
-                    <span>{{ stage.order }}</span>
+                    <span>{{ node.emoji }}</span>
                   }
                 </div>
-                @if (i < roadmap()!.stages.length - 1) {
-                  <div class="stage-connector" [style.background-color]="stage.color + '55'"></div>
+                @if (i < roadmap()!.nodes.length - 1) {
+                  <div class="node-connector"></div>
                 }
               </div>
 
-              <button
-                type="button"
-                class="stage-card flex-1 text-left"
-                [class.stage-card--locked]="stage.status === 'locked'"
-                [style.--stage-color]="stage.color"
-                [disabled]="stage.status === 'locked'"
-                (click)="openStage(stage)"
-              >
-                <div class="stage-card__inner">
-                  <div class="flex items-start gap-3">
-                    <span class="text-3xl">{{ stage.emoji }}</span>
+              <button type="button" class="node-card flex-1 text-left" (click)="openTopic(node)">
+                <div class="node-card__inner">
+                  <div class="flex items-start justify-between gap-2">
                     <div class="min-w-0 flex-1">
-                      <p class="text-[10px] font-bold uppercase tracking-wider opacity-70">
-                        Этап {{ stage.order }}
+                      <p class="text-[10px] font-bold uppercase tracking-wider text-[var(--tg-hint)]">
+                        {{ statusLabel(node.status) }}
                       </p>
-                      <h2 class="text-base font-bold leading-tight">{{ stage.title }}</h2>
-                      @if (stage.progress !== undefined && stage.status !== 'locked') {
-                        <div class="mt-2">
-                          <div class="mb-1 flex justify-between text-[10px] opacity-70">
-                            <span>Прогресс</span>
-                            <span>{{ stage.progress | number: '1.0-0' }}%</span>
-                          </div>
-                          <div class="h-1.5 overflow-hidden rounded-full bg-black/20">
-                            <div
-                              class="h-full rounded-full transition-all"
-                              [style.width.%]="stage.progress"
-                              [style.background-color]="stage.color"
-                            ></div>
-                          </div>
-                        </div>
-                      }
+                      <h2 class="text-base font-bold leading-tight">{{ node.title }}</h2>
                     </div>
+                    <span class="text-2xl">{{ node.emoji }}</span>
                   </div>
 
-                  <ul class="mt-3 space-y-1">
-                    @for (topic of stage.topics; track topic) {
-                      <li class="flex items-start gap-2 text-xs text-[var(--tg-hint)]">
-                        <span class="mt-1 h-1 w-1 shrink-0 rounded-full bg-current opacity-60"></span>
-                        <span>{{ topic }}</span>
-                      </li>
-                    }
-                  </ul>
+                  <div class="mt-3">
+                    <div class="mb-1 flex justify-between text-xs text-[var(--tg-hint)]">
+                      <span>Прогресс</span>
+                      <span>{{ node.percent | number: '1.0-0' }}%</span>
+                    </div>
+                    <app-progress-bar [value]="node.percent" />
+                  </div>
 
-                  @if (stage.status === 'active') {
-                    <p class="mt-3 text-xs font-semibold" [style.color]="stage.color">
-                      Текущий этап →
+                  @if (node.subtopicCount !== undefined) {
+                    <p class="mt-2 text-xs text-[var(--tg-hint)]">
+                      Подтем: {{ node.completedSubtopics ?? 0 }} / {{ node.subtopicCount }}
+                    </p>
+                  }
+
+                  @if (node.currentSubtopicKey) {
+                    <p class="mt-1 text-xs font-medium text-[var(--tg-button)]">
+                      Текущая: {{ node.currentSubtopicKey }}
                     </p>
                   }
                 </div>
@@ -128,27 +106,18 @@ import { Roadmap, RoadmapStage } from '../../shared/models/learning.models';
             </div>
           }
         </div>
-
-        <footer class="mx-4 mb-4 rounded-2xl border border-dashed border-white/15 bg-white/5 px-4 py-3 text-center text-xs text-[var(--tg-hint)]">
-          🏆 Не просто учись — строй что-то крутое!
-        </footer>
       }
     </div>
   `,
   styles: `
     .roadmap-page {
       background:
-        radial-gradient(ellipse at 20% 0%, rgba(99, 102, 241, 0.15), transparent 50%),
-        radial-gradient(ellipse at 80% 30%, rgba(168, 85, 247, 0.1), transparent 40%),
+        radial-gradient(ellipse at 20% 0%, rgba(99, 102, 241, 0.12), transparent 50%),
         var(--tg-bg);
     }
 
     .roadmap-header {
-      background: linear-gradient(180deg, rgba(99, 102, 241, 0.08) 0%, transparent 100%);
-    }
-
-    .motivation-badge {
-      background: rgba(255, 255, 255, 0.04);
+      background: linear-gradient(180deg, rgba(99, 102, 241, 0.06) 0%, transparent 100%);
     }
 
     .road-line {
@@ -160,28 +129,15 @@ import { Roadmap, RoadmapStage } from '../../shared/models/learning.models';
       border-radius: 999px;
       background: repeating-linear-gradient(
         180deg,
-        rgba(255, 255, 255, 0.15) 0,
-        rgba(255, 255, 255, 0.15) 8px,
+        rgba(255, 255, 255, 0.12) 0,
+        rgba(255, 255, 255, 0.12) 8px,
         transparent 8px,
         transparent 16px
       );
-      opacity: 0.5;
+      opacity: 0.6;
     }
 
-    .stage-row--right {
-      flex-direction: row-reverse;
-    }
-
-    .stage-row--right .stage-card__inner {
-      text-align: right;
-    }
-
-    .stage-row--right .stage-card ul li {
-      flex-direction: row-reverse;
-      text-align: right;
-    }
-
-    .stage-track {
+    .node-track {
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -190,60 +146,60 @@ import { Roadmap, RoadmapStage } from '../../shared/models/learning.models';
       z-index: 1;
     }
 
-    .stage-pin {
+    .node-pin {
       display: flex;
       height: 2.5rem;
       width: 2.5rem;
       align-items: center;
       justify-content: center;
       border-radius: 999px;
-      font-size: 0.875rem;
+      font-size: 1rem;
       font-weight: 700;
       color: white;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
 
-    .stage-pin--locked {
-      opacity: 0.45;
-      filter: grayscale(0.5);
+    .node-pin--completed {
+      background: #22c55e;
     }
 
-    .stage-pin--active {
-      animation: pulse-pin 2s ease-in-out infinite;
+    .node-pin--active {
+      background: #3b82f6;
+      animation: pulse-node 2s ease-in-out infinite;
     }
 
-    .stage-connector {
+    .node-pin--available {
+      background: #6366f1;
+    }
+
+    .node-connector {
       width: 3px;
       flex: 1;
-      min-height: 1.5rem;
+      min-height: 1.25rem;
       margin: 0.25rem 0;
       border-radius: 999px;
+      background: rgba(99, 102, 241, 0.35);
     }
 
-    .stage-card {
+    .node-card {
       border-radius: 1rem;
-      border: 2px solid color-mix(in srgb, var(--stage-color) 70%, transparent);
-      background: color-mix(in srgb, var(--stage-color) 8%, var(--tg-secondary-bg));
-      transition: transform 0.15s ease, opacity 0.15s ease;
+      border: 2px solid rgba(99, 102, 241, 0.25);
+      background: var(--tg-secondary-bg);
+      transition: transform 0.15s ease;
     }
 
-    .stage-card:not(:disabled):active {
+    .node-card:active {
       transform: scale(0.98);
     }
 
-    .stage-card--locked {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
-
-    .stage-card__inner {
+    .node-card__inner {
       padding: 0.875rem;
     }
 
-    @keyframes pulse-pin {
+    @keyframes pulse-node {
       0%,
       100% {
-        box-shadow: 0 0 0 0 color-mix(in srgb, var(--stage-color, #6366f1) 40%, transparent);
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.35);
       }
       50% {
         box-shadow: 0 0 0 8px transparent;
@@ -258,6 +214,7 @@ export class RoadmapComponent implements OnInit {
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly roadmap = signal<Roadmap | null>(null);
+  readonly statusLabel = roadmapStatusLabel;
 
   ngOnInit(): void {
     this.api.getRoadmap().subscribe({
@@ -273,12 +230,7 @@ export class RoadmapComponent implements OnInit {
     });
   }
 
-  openStage(stage: RoadmapStage): void {
-    if (stage.status === 'locked') {
-      return;
-    }
-
-    const topicKey = stage.topicKey ?? stage.key;
-    this.router.navigate(['/topics', topicKey]);
+  openTopic(node: RoadmapNode): void {
+    this.router.navigate(['/topics', node.key]);
   }
 }

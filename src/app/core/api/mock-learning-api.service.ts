@@ -9,14 +9,119 @@ import {
   Roadmap,
   Session,
   Topic,
+  TopicDetail,
+  TopicRoadmap,
 } from '../../shared/models/learning.models';
 import { LearningApi } from './learning-api.interface';
 
 const MOCK_TOPICS: Topic[] = [
-  { key: 'java_core', title: 'Java Core', emoji: '☕', answered: 12, correct: 9, accuracy: 75 },
-  { key: 'spring', title: 'Spring', emoji: '🌱', answered: 8, correct: 5, accuracy: 62 },
-  { key: 'devops', title: 'DevOps', emoji: '⚙️', answered: 0, correct: 0, accuracy: 0 },
+  { key: 'java_core', title: 'Java Core', emoji: '☕', answered: 40, correct: 32, accuracy: 85 },
+  { key: 'spring', title: 'Spring', emoji: '🌱', answered: 20, correct: 12, accuracy: 62 },
+  { key: 'docker_k8s', title: 'Docker & K8s', emoji: '🐳', answered: 5, correct: 3, accuracy: 40 },
+  { key: 'cicd', title: 'CI/CD', emoji: '🔄', answered: 0, correct: 0, accuracy: 0 },
+  { key: 'integrations', title: 'Интеграции', emoji: '🔌', answered: 0, correct: 0, accuracy: 0 },
 ];
+
+const MOCK_ROADMAP: Roadmap = {
+  title: 'Java Learning Roadmap',
+  subtitle: 'Путь от основ до production-ready разработчика',
+  nodes: [
+    {
+      key: 'java_core',
+      title: 'Java Core',
+      emoji: '☕',
+      percent: 85,
+      status: 'completed',
+      subtopicCount: 5,
+      completedSubtopics: 5,
+    },
+    {
+      key: 'spring',
+      title: 'Spring',
+      emoji: '🌱',
+      percent: 45,
+      status: 'in_progress',
+      subtopicCount: 4,
+      completedSubtopics: 1,
+      currentSubtopicKey: 'spring_core',
+    },
+    {
+      key: 'docker_k8s',
+      title: 'Docker & K8s',
+      emoji: '🐳',
+      percent: 10,
+      status: 'available',
+      subtopicCount: 3,
+      completedSubtopics: 0,
+    },
+    {
+      key: 'cicd',
+      title: 'CI/CD',
+      emoji: '🔄',
+      percent: 0,
+      status: 'available',
+      subtopicCount: 3,
+      completedSubtopics: 0,
+    },
+    {
+      key: 'integrations',
+      title: 'Интеграции',
+      emoji: '🔌',
+      percent: 0,
+      status: 'available',
+      subtopicCount: 2,
+      completedSubtopics: 0,
+    },
+  ],
+};
+
+const MOCK_TOPIC_ROADMAPS: Record<string, TopicRoadmap> = {
+  spring: {
+    topicKey: 'spring',
+    title: 'Spring',
+    emoji: '🌱',
+    overallPercent: 45,
+    currentSubtopicKey: 'spring_core',
+    subtopics: [
+      {
+        key: 'spring_intro',
+        title: 'Введение в Spring',
+        emoji: '🌱',
+        description: 'IoC, DI, контекст приложения',
+        status: 'completed',
+        percent: 100,
+        totals: { answered: 20, total: 20, correct: 18 },
+      },
+      {
+        key: 'spring_core',
+        title: 'Spring Core',
+        emoji: '⚙️',
+        description: '@Configuration, @Bean, жизненный цикл',
+        status: 'in_progress',
+        percent: 55,
+        totals: { answered: 11, total: 20, correct: 8 },
+      },
+      {
+        key: 'spring_boot',
+        title: 'Spring Boot',
+        emoji: '🚀',
+        description: 'Auto-configuration, starters, Actuator',
+        status: 'locked',
+        percent: 0,
+        totals: { answered: 0, total: 15 },
+      },
+      {
+        key: 'spring_data',
+        title: 'Spring Data',
+        emoji: '🗄️',
+        description: 'JPA, репозитории, транзакции',
+        status: 'locked',
+        percent: 0,
+        totals: { answered: 0, total: 15 },
+      },
+    ],
+  },
+};
 
 const MOCK_QUESTION: Question = {
   id: 'spring_01',
@@ -33,78 +138,6 @@ const MOCK_QUESTION: Question = {
   tags: ['interview'],
 };
 
-const MOCK_ROADMAP: Roadmap = {
-  title: 'Java Learning Roadmap',
-  subtitle: 'Путь от основ до production-ready разработчика',
-  currentStageOrder: 2,
-  stages: [
-    {
-      order: 1,
-      key: 'java_core',
-      title: 'Java Basics',
-      emoji: '💻',
-      color: '#a855f7',
-      status: 'completed',
-      topicKey: 'java_core',
-      progress: 100,
-      topics: ['Синтаксис и типы', 'ООП', 'Коллекции', 'Streams', 'Исключения'],
-    },
-    {
-      order: 2,
-      key: 'spring',
-      title: 'Spring Framework',
-      emoji: '🌱',
-      color: '#3b82f6',
-      status: 'active',
-      topicKey: 'spring',
-      progress: 45,
-      topics: ['DI и IoC', '@Transactional', 'Spring Boot', 'REST API', 'Security'],
-    },
-    {
-      order: 3,
-      key: 'docker_k8s',
-      title: 'Docker & K8s',
-      emoji: '🐳',
-      color: '#22c55e',
-      status: 'locked',
-      topicKey: 'docker_k8s',
-      progress: 0,
-      topics: ['Dockerfile', 'Compose', 'Pods', 'Deployments', 'Helm'],
-    },
-    {
-      order: 4,
-      key: 'cicd',
-      title: 'CI/CD',
-      emoji: '🔄',
-      color: '#f97316',
-      status: 'locked',
-      topicKey: 'cicd',
-      progress: 0,
-      topics: ['GitHub Actions', 'Pipeline', 'Тесты в CI', 'Деплой', 'Артефакты'],
-    },
-    {
-      order: 5,
-      key: 'projects',
-      title: 'Projects',
-      emoji: '💡',
-      color: '#eab308',
-      status: 'locked',
-      progress: 0,
-      topics: ['Pet-проект', 'Code review', 'Документация', 'Портфолио'],
-    },
-    {
-      order: 6,
-      key: 'career',
-      title: 'Career',
-      emoji: '💼',
-      color: '#ec4899',
-      status: 'locked',
-      progress: 0,
-      topics: ['Собеседования', 'Open Source', 'Нетворкинг', 'Рост'],
-    },
-  ],
-};
-
 @Injectable()
 export class MockLearningApiService implements LearningApi {
   private session: Session | null = null;
@@ -119,11 +152,12 @@ export class MockLearningApiService implements LearningApi {
             subtitle: `Вопрос ${this.session.currentIndex} / ${this.session.total}`,
           })
         : ({
-            type: 'topic' as const,
+            type: 'subtopic' as const,
             label: 'Продолжить обучение',
-            topicKey: 'spring',
-            title: 'Spring Framework',
-            subtitle: 'Следующий этап роудмапа',
+            topic: 'spring',
+            subtopic: 'spring_core',
+            title: 'Spring Core',
+            subtitle: 'Подтема в процессе',
           });
 
     return of({
@@ -146,6 +180,37 @@ export class MockLearningApiService implements LearningApi {
 
   getRoadmap(): Observable<Roadmap> {
     return of(MOCK_ROADMAP).pipe(delay(300));
+  }
+
+  getTopicDetail(topicKey: string): Observable<TopicDetail> {
+    const roadmap = MOCK_TOPIC_ROADMAPS[topicKey];
+    const topic = MOCK_TOPICS.find((item) => item.key === topicKey);
+
+    return of({
+      key: topicKey,
+      title: roadmap?.title ?? topic?.title ?? topicKey,
+      emoji: roadmap?.emoji ?? topic?.emoji ?? '📚',
+      overallPercent: roadmap?.overallPercent ?? topic?.accuracy ?? 0,
+      subtopicCount: roadmap?.subtopics.length,
+      completedSubtopics: roadmap?.subtopics.filter((s) => s.status === 'completed').length,
+      currentSubtopicKey: roadmap?.currentSubtopicKey,
+    }).pipe(delay(200));
+  }
+
+  getTopicRoadmap(topicKey: string): Observable<TopicRoadmap> {
+    const roadmap = MOCK_TOPIC_ROADMAPS[topicKey];
+
+    if (roadmap) {
+      return of(roadmap).pipe(delay(200));
+    }
+
+    return of({
+      topicKey,
+      title: topicKey,
+      emoji: '📚',
+      overallPercent: 0,
+      subtopics: [],
+    }).pipe(delay(200));
   }
 
   getProfile(): Observable<ProfileView> {

@@ -3,12 +3,16 @@ import {
   MeDto,
   NextActionDto,
   RoadmapDto,
-  RoadmapStageDto,
+  RoadmapNodeDto,
   SessionDto,
   StatsDto,
+  SubtopicRoadmapNodeDto,
+  SubtopicTotalsDto,
+  TopicDetailDto,
+  TopicRoadmapDto,
 } from '../../shared/models/api.dto';
 
-const STAGE_COLORS = ['#a855f7', '#3b82f6', '#22c55e', '#f97316', '#eab308', '#ec4899'];
+const NODE_COLORS = ['#a855f7', '#3b82f6', '#22c55e', '#f97316', '#eab308', '#ec4899'];
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
@@ -24,6 +28,10 @@ function asString(value: unknown, fallback = ''): string {
 
 function asNumber(value: unknown, fallback = 0): number {
   return typeof value === 'number' && !Number.isNaN(value) ? value : fallback;
+}
+
+function isBlank(value: unknown): boolean {
+  return value === null || value === undefined || (typeof value === 'string' && value.trim().length === 0);
 }
 
 function normalizeMe(raw: unknown): MeDto {
@@ -70,46 +78,87 @@ function normalizeNextAction(raw: unknown): NextActionDto | undefined {
     return undefined;
   }
 
+  const topic = asString(data['topic'] ?? data['topicKey'] ?? data['topic_key']) || undefined;
+
   return {
     type: type as NextActionDto['type'],
     label: asString(data['label'], 'Продолжить'),
-    topicKey: asString(data['topicKey'] ?? data['topic_key']) || undefined,
+    topic,
+    topicKey: topic,
+    subtopic: asString(data['subtopic'] ?? data['subtopicKey'] ?? data['subtopic_key']) || undefined,
     title: asString(data['title']) || undefined,
     subtitle: asString(data['subtitle']) || undefined,
   };
 }
 
-function normalizeStageTopics(raw: unknown): string[] {
-  return asArray(raw)
-    .map((item) => {
-      if (typeof item === 'string') {
-        return item;
-      }
+function mapLegacyStatus(status: string): RoadmapNodeDto['status'] {
+  if (status === 'completed') {
+    return 'completed';
+  }
 
-      const topic = asRecord(item);
-      return asString(topic['title'] ?? topic['name'] ?? topic['label']);
-    })
-    .filter((item) => item.length > 0);
+  if (status === 'active' || status === 'in_progress') {
+    return 'in_progress';
+  }
+
+  return 'available';
 }
 
-function normalizeStage(raw: unknown, index: number): RoadmapStageDto {
+function normalizeRoadmapNode(raw: unknown, index: number): RoadmapNodeDto {
   const data = asRecord(raw);
-  const order = asNumber(data['order'], index + 1);
-  const key = asString(data['key'] ?? data['id'], `stage_${order}`);
+  const key = asString(data['key'] ?? data['topicKey'] ?? data['topic_key'] ?? data['id'], `topic_${index}`);
+  const statusRaw = asString(data['status'], 'available');
+
+  return {
+    key,
+    title: asString(data['title'] ?? data['name'], key),
+    emoji: asString(data['emoji'] ?? data['icon'], '📚'),
+    percent: asNumber(data['percent'] ?? data['progress'] ?? data['overallPercent'] ?? data['overall_percent']),
+    status: (['available', 'in_progress', 'completed'].includes(statusRaw)
+      ? statusRaw
+      : mapLegacyStatus(statusRaw)) as RoadmapNodeDto['status'],
+    subtopicCount:
+      data['subtopicCount'] !== undefined || data['subtopic_count'] !== undefined
+        ? asNumber(data['subtopicCount'] ?? data['subtopic_count'])
+        : undefined,
+    completedSubtopics:
+      data['completedSubtopics'] !== undefined || data['completed_subtopics'] !== undefined
+        ? asNumber(data['completedSubtopics'] ?? data['completed_subtopics'])
+        : undefined,
+    currentSubtopicKey:
+      asString(data['currentSubtopicKey'] ?? data['current_subtopic_key']) || undefined,
+  };
+}
+
+function normalizeTotals(raw: unknown): SubtopicTotalsDto | undefined {
+  if (!raw) {
+    return undefined;
+  }
+
+  const data = asRecord(raw);
+
+  return {
+    answered: data['answered'] !== undefined ? asNumber(data['answered']) : undefined,
+    total: data['total'] !== undefined ? asNumber(data['total']) : undefined,
+    correct: data['correct'] !== undefined ? asNumber(data['correct']) : undefined,
+  };
+}
+
+function normalizeSubtopicNode(raw: unknown, index: number): SubtopicRoadmapNodeDto {
+  const data = asRecord(raw);
+  const key = asString(data['key'] ?? data['id'], `subtopic_${index}`);
   const statusRaw = asString(data['status'], 'locked');
 
   return {
-    order,
     key,
-    title: asString(data['title'] ?? data['name'], `Этап ${order}`),
-    emoji: asString(data['emoji'] ?? data['icon'], '📚'),
-    color: asString(data['color'], STAGE_COLORS[index % STAGE_COLORS.length]),
-    status: (['locked', 'active', 'completed'].includes(statusRaw)
+    title: asString(data['title'] ?? data['name'], `Подтема ${index + 1}`),
+    emoji: asString(data['emoji'] ?? data['icon'], '📖'),
+    description: asString(data['description']) || undefined,
+    status: (['locked', 'available', 'in_progress', 'completed'].includes(statusRaw)
       ? statusRaw
-      : 'locked') as RoadmapStageDto['status'],
-    topics: normalizeStageTopics(data['topics'] ?? data['items'] ?? data['bullets']),
-    progress: data['progress'] !== undefined ? asNumber(data['progress']) : undefined,
-    topicKey: asString(data['topicKey'] ?? data['topic_key'] ?? data['key']) || undefined,
+      : 'locked') as SubtopicRoadmapNodeDto['status'],
+    percent: asNumber(data['percent'] ?? data['progress']),
+    totals: normalizeTotals(data['totals']),
+    nextAction: normalizeNextAction(data['nextAction'] ?? data['next_action']),
   };
 }
 
@@ -133,16 +182,76 @@ export function normalizeDashboardDto(raw: unknown): DashboardDto {
 export function normalizeRoadmapDto(raw: unknown): RoadmapDto {
   const root = asRecord(raw);
   const data = asRecord(root['data'] ?? root);
-  const stagesRaw = asArray(data['stages'] ?? data['milestones'] ?? data['items'] ?? data['steps']);
+  const nodesRaw = asArray(data['nodes'] ?? data['topics'] ?? data['stages'] ?? data['items']);
+
+  const nodes = nodesRaw.map((node, index) => normalizeRoadmapNode(node, index));
 
   return {
-    title: asString(data['title'], 'Learning Roadmap'),
+    title: asString(data['title'], 'Learning Roadmap') || undefined,
     subtitle: asString(data['subtitle']) || undefined,
-    currentStageOrder: data['currentStageOrder'] !== undefined
-      ? asNumber(data['currentStageOrder'] ?? data['current_stage_order'])
-      : undefined,
-    stages: stagesRaw.map((stage, index) => normalizeStage(stage, index)),
+    nodes,
   };
 }
 
-export { STAGE_COLORS };
+export function normalizeTopicDetailDto(raw: unknown, topicKey: string): TopicDetailDto {
+  const root = asRecord(raw);
+  const data = asRecord(root['data'] ?? root);
+
+  return {
+    key: asString(data['key'] ?? data['topicKey'] ?? data['topic_key'], topicKey),
+    title: asString(data['title'], topicKey),
+    emoji: asString(data['emoji'] ?? data['icon'], '📚'),
+    overallPercent: asNumber(data['overallPercent'] ?? data['overall_percent'] ?? data['percent']),
+    subtopicCount:
+      data['subtopicCount'] !== undefined || data['subtopic_count'] !== undefined
+        ? asNumber(data['subtopicCount'] ?? data['subtopic_count'])
+        : undefined,
+    completedSubtopics:
+      data['completedSubtopics'] !== undefined || data['completed_subtopics'] !== undefined
+        ? asNumber(data['completedSubtopics'] ?? data['completed_subtopics'])
+        : undefined,
+    currentSubtopicKey:
+      asString(data['currentSubtopicKey'] ?? data['current_subtopic_key']) || undefined,
+  };
+}
+
+export function normalizeTopicRoadmapDto(raw: unknown, topicKey: string): TopicRoadmapDto {
+  const root = asRecord(raw);
+  const data = asRecord(root['data'] ?? root);
+  const subtopicsRaw = asArray(data['subtopics'] ?? data['nodes'] ?? data['items']);
+
+  return {
+    topicKey: asString(data['topicKey'] ?? data['topic_key'] ?? data['key'], topicKey),
+    title: asString(data['title'], topicKey),
+    emoji: asString(data['emoji'] ?? data['icon'], '📚'),
+    overallPercent: asNumber(data['overallPercent'] ?? data['overall_percent'] ?? data['percent']),
+    currentSubtopicKey:
+      asString(data['currentSubtopicKey'] ?? data['current_subtopic_key']) || undefined,
+    subtopics: subtopicsRaw.map((item, index) => normalizeSubtopicNode(item, index)),
+  };
+}
+
+export function topicDtoToRoadmapNode(
+  topic: { key: string; title: string; emoji: string },
+  stats?: { answered?: number; correct?: number; accuracy?: number },
+  index = 0,
+): RoadmapNodeDto {
+  const percent = stats?.accuracy ?? 0;
+  let status: RoadmapNodeDto['status'] = 'available';
+
+  if (percent >= 80) {
+    status = 'completed';
+  } else if ((stats?.answered ?? 0) > 0) {
+    status = 'in_progress';
+  }
+
+  return {
+    key: topic.key,
+    title: topic.title,
+    emoji: topic.emoji,
+    percent,
+    status,
+  };
+}
+
+export { NODE_COLORS as STAGE_COLORS, isBlank };

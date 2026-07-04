@@ -21,8 +21,16 @@ import {
   Roadmap,
   Session,
   Topic,
+  TopicDetail,
+  TopicRoadmap,
 } from '../../shared/models/learning.models';
-import { normalizeDashboardDto, normalizeRoadmapDto, STAGE_COLORS } from './api-normalize';
+import {
+  normalizeDashboardDto,
+  normalizeRoadmapDto,
+  normalizeTopicDetailDto,
+  normalizeTopicRoadmapDto,
+  topicDtoToRoadmapNode,
+} from './api-normalize';
 import {
   mapAnswerResult,
   mapDashboard,
@@ -30,9 +38,12 @@ import {
   mapQuestion,
   mapQuizPick,
   mapRoadmap,
+  mapRoadmapNode,
   mapSession,
   mapStats,
   mapTopic,
+  mapTopicDetail,
+  mapTopicRoadmap,
 } from './api.mapper';
 import { inferNextAction } from './next-action.util';
 import { LearningApi } from './learning-api.interface';
@@ -54,9 +65,48 @@ export class HttpLearningApiService implements LearningApi {
     return this.http.get<unknown>(`${this.baseUrl}/roadmap`).pipe(
       map((raw) => this.toRoadmap(raw)),
       switchMap((roadmap) =>
-        roadmap.stages.length > 0 ? of(roadmap) : this.buildRoadmapFallback(),
+        roadmap.nodes.length > 0 ? of(roadmap) : this.buildRoadmapFallback(),
       ),
       catchError(() => this.buildRoadmapFallback()),
+    );
+  }
+
+  getTopicDetail(topicKey: string): Observable<TopicDetail> {
+    return this.http.get<unknown>(`${this.baseUrl}/topics/${topicKey}`).pipe(
+      map((raw) => mapTopicDetail(normalizeTopicDetailDto(raw, topicKey))),
+      catchError(() =>
+        this.getTopics().pipe(
+          map((topics) => {
+            const topic = topics.find((item) => item.key === topicKey);
+            return mapTopicDetail(
+              normalizeTopicDetailDto(
+                {
+                  key: topicKey,
+                  title: topic?.title ?? topicKey,
+                  emoji: topic?.emoji ?? '📚',
+                  overallPercent: topic?.accuracy ?? 0,
+                },
+                topicKey,
+              ),
+            );
+          }),
+        ),
+      ),
+    );
+  }
+
+  getTopicRoadmap(topicKey: string): Observable<TopicRoadmap> {
+    return this.http.get<unknown>(`${this.baseUrl}/topics/${topicKey}/roadmap`).pipe(
+      map((raw) => mapTopicRoadmap(normalizeTopicRoadmapDto(raw, topicKey))),
+      catchError(() =>
+        of({
+          topicKey,
+          title: topicKey,
+          emoji: '📚',
+          overallPercent: 0,
+          subtopics: [],
+        }),
+      ),
     );
   }
 
@@ -140,7 +190,9 @@ export class HttpLearningApiService implements LearningApi {
   private toDashboard(raw: unknown): Dashboard {
     const dashboard = mapDashboard(normalizeDashboardDto(raw));
 
-    if (!dashboard.nextAction?.type || !dashboard.nextAction.label) {
+    if (dashboard.session && !dashboard.session.finished) {
+      dashboard.nextAction = inferNextAction(dashboard.session, dashboard.stats);
+    } else if (!dashboard.nextAction?.type || !dashboard.nextAction.label) {
       dashboard.nextAction = inferNextAction(dashboard.session, dashboard.stats);
     }
 
@@ -176,33 +228,23 @@ export class HttpLearningApiService implements LearningApi {
   }
 
   private buildRoadmapFallback(): Observable<Roadmap> {
-    return this.getTopics().pipe(
-      map((topics) => ({
+    return forkJoin({
+      topics: this.http.get<TopicDto[]>(`${this.baseUrl}/topics`),
+      stats: this.http.get<StatsDto>(`${this.baseUrl}/stats`).pipe(catchError(() => of(null))),
+    }).pipe(
+      map(({ topics, stats }) => ({
         title: 'Learning Roadmap',
         subtitle: 'Путь обучения по темам',
-        stages: topics.map((topic, index) => ({
-          order: index + 1,
-          key: topic.key,
-          title: topic.title,
-          emoji: topic.emoji,
-          color: STAGE_COLORS[index % STAGE_COLORS.length],
-          status: topic.answered
-            ? ('completed' as const)
-            : index === 0 || topics[index - 1]?.answered
-              ? ('active' as const)
-              : ('locked' as const),
-          topics: topic.answered
-            ? [`${topic.correct ?? 0} / ${topic.answered} верных ответов`]
-            : ['Ещё не начинали'],
-          progress: topic.accuracy,
-          topicKey: topic.key,
-        })),
+        nodes: topics.map((topic, index) => {
+          const topicStats = stats?.topicStats?.find((item) => item.title === topic.title);
+          return mapRoadmapNode(topicDtoToRoadmapNode(topic, topicStats, index));
+        }),
       })),
       catchError(() =>
         of({
           title: 'Learning Roadmap',
           subtitle: 'Путь обучения',
-          stages: [],
+          nodes: [],
         }),
       ),
     );

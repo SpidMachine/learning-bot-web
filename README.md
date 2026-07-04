@@ -154,13 +154,15 @@ cp src/environments/environment.local.example.ts src/environments/environment.lo
 | Метод | Путь | Описание |
 |-------|------|----------|
 | GET | `/api/v1/dashboard` | Главная: me, stats, session, nextAction |
-| GET | `/api/v1/roadmap` | Этапы обучения (роудмап) |
+| GET | `/api/v1/roadmap` | Роудмап тем (`nodes[]`, все кликабельны) |
+| GET | `/api/v1/topics/{key}` | Карточка темы |
+| GET | `/api/v1/topics/{key}/roadmap` | Роудмап подтем |
 | GET | `/api/v1/me` | Профиль Telegram-пользователя |
 | GET | `/api/v1/topics` | Список тем |
 | GET | `/api/v1/stats` | Статистика обучения |
 | GET | `/api/v1/achievements` | Разблокированные достижения |
 | GET | `/api/v1/sessions/current` | Текущая сессия (5 вопросов) |
-| POST | `/api/v1/sessions` | Начать сессию |
+| POST | `/api/v1/sessions` | Начать сессию (`topic`, `subtopic`) |
 | POST | `/api/v1/quiz/answers` | Отправить ответ |
 | POST | `/api/v1/quiz/pick` | Случайный вопрос |
 | POST | `/api/v1/quiz/review` | Вопрос на повторение |
@@ -176,7 +178,7 @@ cp src/environments/environment.local.example.ts src/environments/environment.lo
 curl -o docs/openapi.json http://localhost:8080/v3/api-docs
 ```
 
-`nextAction.type` на главной: `session` → `/session`, `review` → `/practice`, `quiz` → `/quiz`, `topic` → `/topics/:key`.
+`nextAction.type`: `session` → `/session`, `review` → `/practice`, `quiz` → `/quiz`, `topic` → `/topics/:key`, `subtopic` → POST `/sessions` + `/session`.
 
 ---
 
