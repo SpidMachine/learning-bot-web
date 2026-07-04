@@ -12,12 +12,12 @@ alwaysApply: true
 - GitHub Pages: `https://spidmachine.github.io/learning-bot-web/`
 - Авторизация API: заголовок `X-Telegram-Init-Data` (Telegram.WebApp.initData)
 - Base URL API: `/api/v1` (dev через proxy → `http://localhost:8080`)
-- Mock-режим: `environment.useMocks` в `src/environments/`
+- Mock-режим: `environmentLocal.useMocks` в `src/environments/`
 - Контракт API: `docs/openapi.json`, правило `.cursor/rules/learning-bot-api-contract.mdc`
 
 ## learning-bot-api (соседняя папка)
 - Backend + Telegram-бот (единственный polling-процесс с BOT_TOKEN)
-- REST API: `/api/v1/me`, `/topics`, `/sessions`, `/quiz/*`, `/stats`, `/bookmarks`, `/settings`
+- REST API: `/api/v1/me`, `/courses`, `/lessons`, `/quizzes`
 - Кнопка Mini App добавляется в обработчик `/start` бота на бэкенде
 - URL Mini App: `https://spidmachine.github.io/learning-bot-web/`
 - Репозиторий learning-bot-api 'https://github.com/SpidMachine/learning-bot-api'

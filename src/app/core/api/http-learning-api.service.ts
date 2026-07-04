@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { catchError, forkJoin, map, Observable, of, throwError } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { environmentLocal } from '../../../environments/environment.local';
 import {
   AnswerResultDto,
   MeDto,
@@ -34,7 +34,7 @@ import { LearningApi } from './learning-api.interface';
 
 @Injectable()
 export class HttpLearningApiService implements LearningApi {
-  private readonly baseUrl = environment.apiBaseUrl;
+  private readonly baseUrl = environmentLocal.apiBaseUrl;
 
   constructor(private readonly http: HttpClient) {}
 
