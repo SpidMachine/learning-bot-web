@@ -6,7 +6,7 @@
     "start": "ng serve --proxy-config proxy.conf.json",
     "start:local": "ng serve --configuration local --host 0.0.0.0 --disable-host-check",
     "start:telegram": "ng serve --configuration local --host 0.0.0.0 --disable-host-check --proxy-config proxy.conf.json",
-    "tunnel": "npx localtunnel --port 4200",
+    "tunnel": "npx cloudflared tunnel --url http://127.0.0.1:4200",
     "build": "ng build",
     "build:local": "ng build --configuration local",
     "watch": "ng build --watch --configuration development",

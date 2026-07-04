@@ -9,95 +9,113 @@ Angular UI для Telegram Mini App сервиса [learning-bot-api](https://gi
 - Angular 19 (standalone components, `@if` / `@for`)
 - Tailwind CSS 3
 - Telegram WebApp SDK (`telegram-web-app.js`)
-- HTTP-клиент с авторизацией через `initData`
+- HTTP-клиент с авторизацией через `X-Telegram-Init-Data`
 
-## Быстрый старт
+## Быстрый старт (браузер)
 
 ```bash
 npm install
 npm start
 ```
 
-Приложение откроется на `http://localhost:4200`.
+Откройте `http://localhost:4200`.
 
-По умолчанию:
-- **В браузере** (`localhost:4200`) — mock-данные, без 401
-- **В Telegram** — реальный API с `X-Telegram-Init-Data`
+Вне Telegram автоматически используются **mock-данные** (жёлтый баннер «Dev-режим»).
 
-## Локальная разработка
+---
 
-### Вариант 1: Браузер (по умолчанию)
+## Локальная разработка: Telegram + API
+
+Для проверки в Telegram нужны **HTTPS** и реальный `initData`. Используем **Cloudflare Tunnel** (`cloudflared`).
+
+### Три терминала
+
+**Терминал 1 — бэкенд**
 
 ```bash
-npm start
-# откройте http://localhost:4200
+# learning-bot-api на порту 8080
 ```
 
-Вне Telegram автоматически включаются **mock-данные** (`useMocksOutsideTelegram: true`). Сверху появится жёлтый баннер «Dev-режим».
+Проверка (401 — это нормально, бэкенд жив):
 
-### Вариант 2: Браузер + реальный API
+```powershell
+curl http://127.0.0.1:8080/api/v1/courses
+```
 
-Скопируйте `initData` из Telegram и сохраните в DevTools:
+**Терминал 2 — фронт**
+
+```bash
+npm run start:telegram
+```
+
+Проверка: `http://localhost:4200` открывается в браузере.
+
+**Терминал 3 — туннель**
+
+```bash
+npm run tunnel
+```
+
+Или напрямую:
+
+```bash
+npx cloudflared tunnel --url http://127.0.0.1:4200
+```
+
+Скопируйте URL вида `https://xxxx.trycloudflare.com`.
+
+### BotFather
+
+1. `/mybots` → ваш бот → **Bot Settings** → **Menu Button**
+2. Временно укажите URL из cloudflared (не GitHub Pages)
+3. Откройте Mini App из Telegram
+
+После разработки верните URL GitHub Pages.
+
+### Как идут запросы
+
+```
+Telegram → cloudflared → localhost:4200 → /api/v1 → proxy → 127.0.0.1:8080
+```
+
+### Важно
+
+| Ситуация | Что происходит |
+|----------|----------------|
+| BotFather → GitHub Pages | Production-сборка, API = `api.example.com` |
+| BotFather → cloudflared URL | Dev-сборка, API = ваш локальный бэкенд |
+| URL туннеля меняется | После перезапуска `cloudflared` обновите BotFather |
+| `curl` без заголовка → 401 | Нормально — нужен `X-Telegram-Init-Data` |
+
+---
+
+## Другие режимы разработки
+
+### Браузер + реальный API (без Telegram)
+
+1. Запустите бэкенд на `:8080`
+2. `npm start`
+3. В DevTools:
 
 ```javascript
-localStorage.setItem('DEV_INIT_DATA', 'ваша_строка_initData');
+localStorage.setItem('DEV_INIT_DATA', 'строка_из_Telegram.WebApp.initData');
 location.reload();
 ```
 
-Бэкенд должен принять эту строку. Чтобы сбросить:
+Получить `initData`: откройте Mini App в **Telegram Desktop** → Inspect → Console:
+
+```javascript
+copy(Telegram.WebApp.initData)
+```
+
+Сброс:
 
 ```javascript
 localStorage.removeItem('DEV_INIT_DATA');
 location.reload();
 ```
 
-### Вариант 3: Telegram + локальный бэкенд (без GitHub Pages)
-
-**Важно:** если в BotFather указан URL GitHub Pages — всегда грузится **production** сборка с `api.example.com`. Для локальной разработки временно переключите URL на HTTPS-туннель.
-
-```bash
-# Терминал 1 — бэкенд на :8080 (learning-bot-api)
-
-# Терминал 2 — фронт (dev, не production!)
-npm run start:telegram
-```
-
-**Терминал 3 — HTTPS-туннель** (выберите один способ):
-
-#### A) localtunnel (без установки, Windows/macOS/Linux)
-
-```bash
-npx localtunnel --port 4200
-```
-
-Выдаст URL вида `https://something.loca.lt` — его в BotFather.
-
-#### B) ngrok (нужна установка)
-
-Windows (PowerShell от администратора):
-
-```powershell
-winget install ngrok.ngrok
-ngrok config add-authtoken ВАШ_ТОКЕН   # бесплатно на ngrok.com
-ngrok http 4200
-```
-
-Или скачайте с https://ngrok.com/download
-
-#### C) Cloudflare Tunnel
-
-```bash
-npx cloudflared tunnel --url http://localhost:4200
-```
-
-1. Скопируйте HTTPS URL из туннеля
-2. В **BotFather** временно замените Menu Button URL
-3. Откройте Mini App из Telegram — запросы: `/api/v1` → proxy → `localhost:8080`
-4. После разработки верните URL GitHub Pages
-
-Локальный конфиг: `src/environments/environment.local.ts` (скопируйте из `environment.local.example.ts`).
-
-### Вариант 4: Всегда mock
+### Только mock (без бэкенда)
 
 В `src/environments/environment.ts`:
 
@@ -105,56 +123,32 @@ npx cloudflared tunnel --url http://localhost:4200
 useMocks: true,
 ```
 
-## Работа с двумя репозиториями в одном чате Cursor
-
-Чтобы агент видел и фронт, и бэкенд:
-
-1. Клонируйте оба репозитория **рядом** в одну папку:
+### Локальный конфиг
 
 ```bash
-mkdir learning-bot && cd learning-bot
-git clone https://github.com/SpidMachine/learning-bot-web.git
-git clone https://github.com/SpidMachine/learning-bot-api.git
+cp src/environments/environment.local.example.ts src/environments/environment.local.ts
 ```
 
-2. Откройте workspace-файл в Cursor:
+Файл `environment.local.ts` в `.gitignore` — для личных настроек.
 
-```bash
-cursor learning-bot-web/learning-bot.code-workspace
-```
+---
 
-Или: **File → Open Workspace from File** → `learning-bot.code-workspace`.
-
-3. В чате Cursor будут доступны оба проекта. Правило `.cursor/rules/multi-repo.mdc` подсказывает агенту архитектуру.
-
-> Для Cloud Agent оба репозитория должны быть доступны в одном workspace (приватный `learning-bot-api` — с авторизацией GitHub).
-
-### Подключение к learning-bot-api
-
-1. Запустите API на `http://localhost:8080`
-2. Запустите фронт (proxy уже настроен в `angular.json`):
-
-```bash
-npm start
-```
-
-Конфигурация в `src/environments/environment.ts`:
-
-```typescript
-export const environment = {
-  production: false,
-  apiBaseUrl: '/api/v1',
-  useMocks: false,
-};
-```
+## Устранение проблем
 
 | Симптом | Решение |
 |---------|---------|
-| `ECONNREFUSED ::1:8080` | Прокси использует `127.0.0.1` (уже в `proxy.conf.json`). Запустите **learning-bot-api** на `:8080` |
-| 500 на `/api/v1/*` в браузере | Без `initData` — mock (жёлтый баннер). С `DEV_INIT_DATA` — нужен запущенный бэкенд |
-| `api.example.com` в запросах | В BotFather указан GitHub Pages — используйте туннель + `npm run start:telegram` |
+| `502 Bad Gateway` в Telegram | Проверьте `localhost:4200` и перезапустите `npm run tunnel` |
+| `ECONNREFUSED ::1:8080` | Запустите бэкенд; proxy уже на `127.0.0.1:8080` |
+| `api.example.com` в запросах | В BotFather указан GitHub Pages — переключите на cloudflared |
+| 401 в Telegram | Проверьте заголовок `X-Telegram-Init-Data` в Network |
+| Пустая страница на GitHub Pages | Нужен `baseHref: /learning-bot-web/` (уже в `angular.json`) |
+
+---
 
 ## API-контракт
+
+**Base URL:** `http://localhost:8080/api/v1`  
+**Auth:** заголовок `X-Telegram-Init-Data` (`Telegram.WebApp.initData`)
 
 | Метод | Путь | Описание |
 |-------|------|----------|
@@ -166,43 +160,36 @@ export const environment = {
 | GET | `/api/v1/quizzes/:id` | Квиз |
 | POST | `/api/v1/quizzes/:id/submit` | Отправить ответы |
 
-Авторизация: заголовок `X-Telegram-Init-Data` с `Telegram.WebApp.initData`.
+Контракт: `docs/openapi.json` (копия из learning-bot-api).
 
-Контракт API: `docs/openapi.json` (копия из learning-bot-api).
+---
 
-## Настройка Telegram Mini App
-
-### 1. Деплой (HTTPS обязателен)
-
-**GitHub Pages** (рекомендуется для этого репозитория):
+## Production (GitHub Pages)
 
 1. **Settings → Pages → Source:** GitHub Actions
-2. После merge в `main` workflow задеплоит приложение
-3. URL: `https://spidmachine.github.io/learning-bot-web/`
-4. В BotFather укажите **именно этот URL** (со слэшем в конце — необязательно, но путь `/learning-bot-web/` обязателен)
+2. URL: `https://spidmachine.github.io/learning-bot-web/`
+3. В `src/environments/environment.prod.ts` укажите реальный API:
 
-> Если страница пустая — убедитесь, что в production-сборке задан `baseHref: /learning-bot-web/` (уже настроено в `angular.json`).
+```typescript
+export const environment = {
+  production: true,
+  apiBaseUrl: 'https://ваш-api.example.com/api/v1',
+  useMocks: false,
+  useMocksOutsideTelegram: false,
+};
+```
 
-**Vercel:**
+4. Сборка:
 
 ```bash
 npm run build
-# vercel deploy --prod
 ```
 
-**GitHub Pages:** workflow в `.github/workflows/deploy.yml` — включите Pages в настройках репозитория.
+Артефакты: `dist/learning-bot-web/browser/`
 
-### 2. BotFather
+---
 
-1. Откройте [@BotFather](https://t.me/BotFather)
-2. `/mybots` → выберите бота → **Bot Settings** → **Menu Button** → укажите URL деплоя
-3. Или `/newapp` для создания Mini App
-
-### 3. Кнопка в боте (learning-bot-api)
-
-Бот запускается только из бэкенда — отдельный Python-бот не нужен.
-
-Добавьте в обработчик `/start` в **learning-bot-api**:
+## Кнопка Mini App в боте (learning-bot-api)
 
 ```python
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
@@ -216,32 +203,24 @@ def start_keyboard() -> InlineKeyboardMarkup:
             web_app=WebAppInfo(url=WEBAPP_URL),
         )
     ]])
-
-# в обработчике /start:
-await message.answer("Привет! Открой обучение:", reply_markup=start_keyboard())
 ```
 
-Menu Button в BotFather и эта inline-кнопка могут работать одновременно.
+Для локальной разработки подставьте URL из cloudflared.
 
-### 4. Dev-режим вне Telegram
+---
 
-В браузере SDK недоступен — приложение использует mock-пользователя и fallback-кнопки внизу экрана. Для полной проверки используйте ngrok:
+## Работа с двумя репозиториями в Cursor
 
 ```bash
-ngrok http 4200
+mkdir learning-bot && cd learning-bot
+git clone https://github.com/SpidMachine/learning-bot-web.git
+git clone https://github.com/SpidMachine/learning-bot-api.git
+cursor learning-bot-web/learning-bot.code-workspace
 ```
 
-Зарегистрируйте HTTPS URL в BotFather и откройте Mini App из Telegram.
+Правила: `.cursor/rules/multi-repo.mdc`, `.cursor/rules/learning-bot-api-contract.mdc`
 
-## Production build
-
-```bash
-npm run build
-```
-
-Артефакты: `dist/learning-bot-web/browser/`
-
-В `src/environments/environment.prod.ts` укажите реальный `apiUrl` и `useMocks: false`.
+---
 
 ## Структура
 
@@ -253,6 +232,15 @@ src/app/
   shared/            # UI-компоненты и модели
   layout/            # Shell с bottom navigation
 ```
+
+## Скрипты
+
+| Команда | Назначение |
+|---------|------------|
+| `npm start` | Браузер, mock вне Telegram |
+| `npm run start:telegram` | Dev для Telegram + cloudflared |
+| `npm run tunnel` | Cloudflare Tunnel на порт 4200 |
+| `npm run build` | Production-сборка |
 
 ## Лицензия
 
