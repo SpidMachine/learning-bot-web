@@ -20,7 +20,53 @@ npm start
 
 Приложение откроется на `http://localhost:4200`.
 
-По умолчанию включён **mock-режим** (`environment.useMocks: true`) — UI работает без backend.
+По умолчанию:
+- **В браузере** (`localhost:4200`) — mock-данные, без 401
+- **В Telegram** — реальный API с `X-Telegram-Init-Data`
+
+## Локальная разработка
+
+### Вариант 1: Браузер (по умолчанию)
+
+```bash
+npm start
+# откройте http://localhost:4200
+```
+
+Вне Telegram автоматически включаются **mock-данные** (`useMocksOutsideTelegram: true`). Сверху появится жёлтый баннер «Dev-режим».
+
+### Вариант 2: Браузер + реальный API
+
+Скопируйте `initData` из Telegram и сохраните в DevTools:
+
+```javascript
+localStorage.setItem('DEV_INIT_DATA', 'ваша_строка_initData');
+location.reload();
+```
+
+Бэкенд должен принять эту строку. Чтобы сбросить:
+
+```javascript
+localStorage.removeItem('DEV_INIT_DATA');
+location.reload();
+```
+
+### Вариант 3: Telegram + ngrok
+
+```bash
+npm start
+ngrok http 4200
+```
+
+URL от ngrok укажите в BotFather и откройте Mini App из Telegram — будет реальный `initData` и API.
+
+### Вариант 4: Всегда mock
+
+В `src/environments/environment.ts`:
+
+```typescript
+useMocks: true,
+```
 
 ## Работа с двумя репозиториями в одном чате Cursor
 
@@ -49,21 +95,23 @@ cursor learning-bot-web/learning-bot.code-workspace
 ### Подключение к learning-bot-api
 
 1. Запустите API на `http://localhost:8080`
-2. В `src/environments/environment.ts` установите:
+2. Запустите фронт (proxy уже настроен в `angular.json`):
+
+```bash
+npm start
+```
+
+Конфигурация в `src/environments/environment.ts`:
 
 ```typescript
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:8080',
+  apiBaseUrl: '/api/v1',
   useMocks: false,
 };
 ```
 
-3. Запустите с прокси:
-
-```bash
-ng serve --proxy-config proxy.conf.json
-```
+Для работы без бэкенда установите `useMocks: true`.
 
 ## API-контракт
 
@@ -77,7 +125,9 @@ ng serve --proxy-config proxy.conf.json
 | GET | `/api/v1/quizzes/:id` | Квиз |
 | POST | `/api/v1/quizzes/:id/submit` | Отправить ответы |
 
-Авторизация: заголовок `Authorization: tma <initData>`. Backend должен валидировать `initData` через HMAC с bot token.
+Авторизация: заголовок `X-Telegram-Init-Data` с `Telegram.WebApp.initData`.
+
+Контракт API: `docs/openapi.json` (копия из learning-bot-api).
 
 ## Настройка Telegram Mini App
 

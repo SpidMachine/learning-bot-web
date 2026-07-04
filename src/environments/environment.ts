@@ -1,5 +1,6 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:8080',
-  useMocks: true,
+  apiBaseUrl: '/api/v1',
+  useMocks: false,
+  useMocksOutsideTelegram: true,
 };
