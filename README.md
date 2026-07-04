@@ -141,6 +141,7 @@ cp src/environments/environment.local.example.ts src/environments/environment.lo
 | `ECONNREFUSED ::1:8080` | Запустите бэкенд; proxy уже на `127.0.0.1:8080` |
 | `api.example.com` в запросах | В BotFather указан GitHub Pages — переключите на cloudflared |
 | 401 в Telegram | Проверьте заголовок `X-Telegram-Init-Data` в Network |
+| `Invalid CORS request` | Перезапустите `npm run start:telegram` (proxy убирает Origin для бэкенда) |
 | Пустая страница на GitHub Pages | Нужен `baseHref: /learning-bot-web/` (уже в `angular.json`) |
 
 ---
