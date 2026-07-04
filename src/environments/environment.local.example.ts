@@ -6,5 +6,5 @@ export const environment = {
   /** Или прямой URL бэкенда, если API тоже на ngrok: */
   // apiBaseUrl: 'https://YOUR-API-NGROK.ngrok-free.app/api/v1',
   useMocks: false,
-  useMocksOutsideTelegram: false,
+  useMocksOutsideTelegram: true,
 };

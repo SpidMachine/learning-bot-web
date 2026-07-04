@@ -148,7 +148,11 @@ export const environment = {
 };
 ```
 
-Для работы без бэкенда установите `useMocks: true`.
+| Симптом | Решение |
+|---------|---------|
+| `ECONNREFUSED ::1:8080` | Прокси использует `127.0.0.1` (уже в `proxy.conf.json`). Запустите **learning-bot-api** на `:8080` |
+| 500 на `/api/v1/*` в браузере | Без `initData` — mock (жёлтый баннер). С `DEV_INIT_DATA` — нужен запущенный бэкенд |
+| `api.example.com` в запросах | В BotFather указан GitHub Pages — используйте туннель + `npm run start:telegram` |
 
 ## API-контракт
 
