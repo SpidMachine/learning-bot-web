@@ -20,6 +20,8 @@ alwaysApply: true
 ## Эндпоинты
 | Method | Path | Response |
 |--------|------|----------|
+| GET | `/dashboard` | DashboardDto (me + stats + session + nextAction) |
+| GET | `/roadmap` | RoadmapDto |
 | GET | `/me` | MeDto |
 | GET | `/topics` | TopicDto[] |
 | GET | `/stats` | StatsDto |
