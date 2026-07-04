@@ -23,15 +23,15 @@ import {
   UserStats,
 } from '../../shared/models/learning.models';
 
-export function mapQuestion(dto: QuestionDto): Question {
+export function mapQuestion(dto: QuestionDto & { text?: string }): Question {
   return {
     id: dto.id,
     kind: dto.kind,
-    topics: dto.topics,
+    topics: dto.topics ?? [],
     difficulty: dto.difficulty,
-    text: dto.question,
-    options: dto.options,
-    tags: dto.tags,
+    text: dto.question ?? dto.text ?? '',
+    options: dto.options ?? [],
+    tags: dto.tags ?? [],
     snippet: dto.snippet,
   };
 }
@@ -58,24 +58,24 @@ export function mapTopic(dto: TopicDto, stats?: TopicStatsDto): Topic {
   };
 }
 
-export function mapStats(dto: StatsDto): UserStats {
+export function mapStats(dto?: Partial<StatsDto>): UserStats {
   return {
-    totalAnswered: dto.totalAnswered,
-    totalCorrect: dto.totalCorrect,
-    accuracy: dto.accuracy,
-    streakDays: dto.streakDays,
-    dueForReview: dto.dueForReview,
-    flashcardsDone: dto.flashcardsDone,
-    weeklyGoal: dto.weeklyGoal,
-    weekAnswered: dto.weekAnswered,
+    totalAnswered: dto?.totalAnswered ?? 0,
+    totalCorrect: dto?.totalCorrect ?? 0,
+    accuracy: dto?.accuracy ?? 0,
+    streakDays: dto?.streakDays ?? 0,
+    dueForReview: dto?.dueForReview ?? 0,
+    flashcardsDone: dto?.flashcardsDone ?? 0,
+    weeklyGoal: dto?.weeklyGoal ?? 20,
+    weekAnswered: dto?.weekAnswered ?? 0,
   };
 }
 
-export function mapMe(dto: { id: number; firstName: string; username?: string }): UserMe {
+export function mapMe(dto?: { id?: number; firstName?: string; username?: string }): UserMe {
   return {
-    id: dto.id,
-    firstName: dto.firstName,
-    username: dto.username,
+    id: dto?.id ?? 0,
+    firstName: dto?.firstName ?? 'Ученик',
+    username: dto?.username,
   };
 }
 
@@ -104,10 +104,18 @@ export function mapDashboard(dto: DashboardDto): Dashboard {
   };
 }
 
-export function mapNextAction(dto: DashboardDto['nextAction']): NextAction {
+export function mapNextAction(dto?: DashboardDto['nextAction']): NextAction {
+  if (!dto?.type) {
+    return {
+      type: 'topic',
+      label: 'Начать обучение',
+      title: 'Выберите тему',
+    };
+  }
+
   return {
     type: dto.type,
-    label: dto.label,
+    label: dto.label ?? 'Продолжить',
     topicKey: dto.topicKey,
     title: dto.title,
     subtitle: dto.subtitle,
@@ -116,10 +124,10 @@ export function mapNextAction(dto: DashboardDto['nextAction']): NextAction {
 
 export function mapRoadmap(dto: RoadmapDto): Roadmap {
   return {
-    title: dto.title,
+    title: dto.title ?? 'Learning Roadmap',
     subtitle: dto.subtitle,
     currentStageOrder: dto.currentStageOrder,
-    stages: dto.stages.map(mapRoadmapStage),
+    stages: (dto.stages ?? []).map(mapRoadmapStage),
   };
 }
 

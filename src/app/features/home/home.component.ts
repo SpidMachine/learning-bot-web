@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { getNextActionRoute } from '../../core/api/next-action.util';
 import { LEARNING_API } from '../../core/api/learning-api.interface';
 import { CardComponent } from '../../shared/components/card/card.component';
+import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { ProgressBarComponent } from '../../shared/components/progress-bar/progress-bar.component';
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
 import { Dashboard } from '../../shared/models/learning.models';
@@ -11,11 +12,17 @@ import { Dashboard } from '../../shared/models/learning.models';
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink, CardComponent, ProgressBarComponent, SkeletonComponent, DecimalPipe],
+  imports: [RouterLink, CardComponent, ProgressBarComponent, SkeletonComponent, EmptyStateComponent, DecimalPipe],
   template: `
     <div class="px-4 pt-6">
       @if (loading()) {
         <app-skeleton [lines]="4" />
+      } @else if (error()) {
+        <app-empty-state
+          emoji="⚠️"
+          title="Не удалось загрузить главную"
+          [description]="error()!"
+        />
       } @else if (dashboard()) {
         <header class="mb-6">
           <p class="text-sm text-[var(--tg-hint)]">Добро пожаловать</p>
@@ -52,15 +59,15 @@ import { Dashboard } from '../../shared/models/learning.models';
               <div class="flex items-center gap-4">
                 <span class="text-3xl">{{ nextActionIcon() }}</span>
                 <div class="flex-1">
-                  <p class="font-semibold">{{ dashboard()!.nextAction.label }}</p>
-                  @if (dashboard()!.nextAction.title) {
+                  <p class="font-semibold">{{ dashboard()!.nextAction?.label ?? 'Продолжить' }}</p>
+                  @if (dashboard()!.nextAction?.title) {
                     <p class="text-sm text-[var(--tg-text)]">
-                      {{ dashboard()!.nextAction.title }}
+                      {{ dashboard()!.nextAction?.title }}
                     </p>
                   }
-                  @if (dashboard()!.nextAction.subtitle) {
+                  @if (dashboard()!.nextAction?.subtitle) {
                     <p class="text-xs text-[var(--tg-hint)]">
-                      {{ dashboard()!.nextAction.subtitle }}
+                      {{ dashboard()!.nextAction?.subtitle }}
                     </p>
                   }
                   @if (dashboard()!.session && !dashboard()!.session!.finished) {
@@ -112,6 +119,7 @@ export class HomeComponent implements OnInit {
   private readonly router = inject(Router);
 
   readonly loading = signal(true);
+  readonly error = signal<string | null>(null);
   readonly dashboard = signal<Dashboard | null>(null);
 
   ngOnInit(): void {
@@ -119,9 +127,11 @@ export class HomeComponent implements OnInit {
       next: (res: Dashboard) => {
         this.dashboard.set(res);
         this.loading.set(false);
+        this.error.set(null);
       },
       error: () => {
         this.loading.set(false);
+        this.error.set('Проверьте, что бэкенд запущен и эндпоинт /api/v1/dashboard доступен.');
       },
     });
   }
@@ -129,7 +139,8 @@ export class HomeComponent implements OnInit {
   continueLearning(): void {
     const dashboard = this.dashboard();
 
-    if (!dashboard) {
+    if (!dashboard?.nextAction) {
+      this.router.navigate(['/roadmap']);
       return;
     }
 

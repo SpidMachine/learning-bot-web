@@ -3,17 +3,26 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { LEARNING_API } from '../../core/api/learning-api.interface';
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
+import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { Roadmap, RoadmapStage } from '../../shared/models/learning.models';
 
 @Component({
   selector: 'app-roadmap',
   standalone: true,
-  imports: [SkeletonComponent, DecimalPipe],
+  imports: [SkeletonComponent, EmptyStateComponent, DecimalPipe],
   template: `
     <div class="roadmap-page min-h-screen pb-28">
       @if (loading()) {
         <div class="px-4 pt-6">
           <app-skeleton [lines]="6" />
+        </div>
+      } @else if (error()) {
+        <div class="px-4 pt-6">
+          <app-empty-state
+            emoji="⚠️"
+            title="Не удалось загрузить роудмап"
+            [description]="error()!"
+          />
         </div>
       } @else if (roadmap()) {
         <header class="roadmap-header px-4 pb-6 pt-6 text-center">
@@ -31,6 +40,14 @@ import { Roadmap, RoadmapStage } from '../../shared/models/learning.models';
 
         <div class="relative px-4">
           <div class="road-line" aria-hidden="true"></div>
+
+          @if (roadmap()!.stages.length === 0) {
+            <app-empty-state
+              emoji="🗺️"
+              title="Этапы пока не настроены"
+              description="Загляните позже или начните с раздела тем"
+            />
+          }
 
           @for (stage of roadmap()!.stages; track stage.key; let i = $index) {
             <div
@@ -239,6 +256,7 @@ export class RoadmapComponent implements OnInit {
   private readonly router = inject(Router);
 
   readonly loading = signal(true);
+  readonly error = signal<string | null>(null);
   readonly roadmap = signal<Roadmap | null>(null);
 
   ngOnInit(): void {
@@ -246,9 +264,11 @@ export class RoadmapComponent implements OnInit {
       next: (res: Roadmap) => {
         this.roadmap.set(res);
         this.loading.set(false);
+        this.error.set(null);
       },
       error: () => {
         this.loading.set(false);
+        this.error.set('Проверьте, что бэкенд запущен и эндпоинт /api/v1/roadmap доступен.');
       },
     });
   }
