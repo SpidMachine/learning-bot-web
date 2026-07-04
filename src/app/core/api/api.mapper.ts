@@ -1,7 +1,10 @@
 import {
   AnswerResultDto,
+  DashboardDto,
   QuestionDto,
   QuizPickDto,
+  RoadmapDto,
+  RoadmapStageDto,
   SessionDto,
   StatsDto,
   TopicDto,
@@ -9,7 +12,11 @@ import {
 } from '../../shared/models/api.dto';
 import {
   AnswerResult,
+  Dashboard,
+  NextAction,
   Question,
+  Roadmap,
+  RoadmapStage,
   Session,
   Topic,
   UserMe,
@@ -85,4 +92,47 @@ export function mapAnswerResult(dto: AnswerResultDto): AnswerResult {
 
 export function mapQuizPick(dto: QuizPickDto): Question {
   return mapQuestion(dto.question);
+}
+
+export function mapDashboard(dto: DashboardDto): Dashboard {
+  return {
+    me: mapMe(dto.me),
+    stats: mapStats(dto.stats),
+    session: dto.session ? mapSession(dto.session) : null,
+    achievements: dto.achievements,
+    nextAction: mapNextAction(dto.nextAction),
+  };
+}
+
+export function mapNextAction(dto: DashboardDto['nextAction']): NextAction {
+  return {
+    type: dto.type,
+    label: dto.label,
+    topicKey: dto.topicKey,
+    title: dto.title,
+    subtitle: dto.subtitle,
+  };
+}
+
+export function mapRoadmap(dto: RoadmapDto): Roadmap {
+  return {
+    title: dto.title,
+    subtitle: dto.subtitle,
+    currentStageOrder: dto.currentStageOrder,
+    stages: dto.stages.map(mapRoadmapStage),
+  };
+}
+
+export function mapRoadmapStage(dto: RoadmapStageDto): RoadmapStage {
+  return {
+    order: dto.order,
+    key: dto.key,
+    title: dto.title,
+    emoji: dto.emoji,
+    color: dto.color,
+    status: dto.status,
+    topics: dto.topics,
+    progress: dto.progress,
+    topicKey: dto.topicKey,
+  };
 }

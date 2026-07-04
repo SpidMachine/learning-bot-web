@@ -2,9 +2,10 @@ import { InjectionToken } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
   AnswerResult,
-  HomeDashboard,
+  Dashboard,
   ProfileView,
   Question,
+  Roadmap,
   Session,
   Topic,
 } from '../../shared/models/learning.models';
@@ -13,7 +14,8 @@ import { QuizPickRequestDto, StartSessionRequestDto } from '../../shared/models/
 export const LEARNING_API = new InjectionToken<LearningApi>('LEARNING_API');
 
 export interface LearningApi {
-  getHomeDashboard(): Observable<HomeDashboard>;
+  getDashboard(): Observable<Dashboard>;
+  getRoadmap(): Observable<Roadmap>;
   getProfile(): Observable<ProfileView>;
   getTopics(): Observable<Topic[]>;
   getCurrentSession(): Observable<Session | null>;

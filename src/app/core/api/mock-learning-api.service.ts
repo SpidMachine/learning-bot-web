@@ -3,9 +3,10 @@ import { delay, Observable, of } from 'rxjs';
 import { QuizPickRequestDto, StartSessionRequestDto } from '../../shared/models/api.dto';
 import {
   AnswerResult,
-  HomeDashboard,
+  Dashboard,
   ProfileView,
   Question,
+  Roadmap,
   Session,
   Topic,
 } from '../../shared/models/learning.models';
@@ -32,11 +33,99 @@ const MOCK_QUESTION: Question = {
   tags: ['interview'],
 };
 
+const MOCK_ROADMAP: Roadmap = {
+  title: 'Java Learning Roadmap',
+  subtitle: 'Путь от основ до production-ready разработчика',
+  currentStageOrder: 2,
+  stages: [
+    {
+      order: 1,
+      key: 'java_core',
+      title: 'Java Basics',
+      emoji: '💻',
+      color: '#a855f7',
+      status: 'completed',
+      topicKey: 'java_core',
+      progress: 100,
+      topics: ['Синтаксис и типы', 'ООП', 'Коллекции', 'Streams', 'Исключения'],
+    },
+    {
+      order: 2,
+      key: 'spring',
+      title: 'Spring Framework',
+      emoji: '🌱',
+      color: '#3b82f6',
+      status: 'active',
+      topicKey: 'spring',
+      progress: 45,
+      topics: ['DI и IoC', '@Transactional', 'Spring Boot', 'REST API', 'Security'],
+    },
+    {
+      order: 3,
+      key: 'docker_k8s',
+      title: 'Docker & K8s',
+      emoji: '🐳',
+      color: '#22c55e',
+      status: 'locked',
+      topicKey: 'docker_k8s',
+      progress: 0,
+      topics: ['Dockerfile', 'Compose', 'Pods', 'Deployments', 'Helm'],
+    },
+    {
+      order: 4,
+      key: 'cicd',
+      title: 'CI/CD',
+      emoji: '🔄',
+      color: '#f97316',
+      status: 'locked',
+      topicKey: 'cicd',
+      progress: 0,
+      topics: ['GitHub Actions', 'Pipeline', 'Тесты в CI', 'Деплой', 'Артефакты'],
+    },
+    {
+      order: 5,
+      key: 'projects',
+      title: 'Projects',
+      emoji: '💡',
+      color: '#eab308',
+      status: 'locked',
+      progress: 0,
+      topics: ['Pet-проект', 'Code review', 'Документация', 'Портфолио'],
+    },
+    {
+      order: 6,
+      key: 'career',
+      title: 'Career',
+      emoji: '💼',
+      color: '#ec4899',
+      status: 'locked',
+      progress: 0,
+      topics: ['Собеседования', 'Open Source', 'Нетворкинг', 'Рост'],
+    },
+  ],
+};
+
 @Injectable()
 export class MockLearningApiService implements LearningApi {
   private session: Session | null = null;
 
-  getHomeDashboard(): Observable<HomeDashboard> {
+  getDashboard(): Observable<Dashboard> {
+    const nextAction =
+      this.session && !this.session.finished
+        ? ({
+            type: 'session' as const,
+            label: 'Продолжить сессию',
+            title: 'Сессия в процессе',
+            subtitle: `Вопрос ${this.session.currentIndex} / ${this.session.total}`,
+          })
+        : ({
+            type: 'topic' as const,
+            label: 'Продолжить обучение',
+            topicKey: 'spring',
+            title: 'Spring Framework',
+            subtitle: 'Следующий этап роудмапа',
+          });
+
     return of({
       me: { id: 1, firstName: 'Тест', username: 'test_user' },
       stats: {
@@ -50,8 +139,13 @@ export class MockLearningApiService implements LearningApi {
         weekAnswered: 12,
       },
       session: this.session,
-      achievements: ['first_answer', 'streak_3'],
+      achievements: ['Первый ответ', 'Серия 3 дня'],
+      nextAction,
     }).pipe(delay(300));
+  }
+
+  getRoadmap(): Observable<Roadmap> {
+    return of(MOCK_ROADMAP).pipe(delay(300));
   }
 
   getProfile(): Observable<ProfileView> {
@@ -67,7 +161,7 @@ export class MockLearningApiService implements LearningApi {
         weeklyGoal: 30,
         weekAnswered: 12,
       },
-      achievements: ['first_answer', 'streak_3'],
+      achievements: ['Первый ответ', 'Серия 3 дня'],
     }).pipe(delay(300));
   }
 

@@ -108,3 +108,42 @@ export interface ApiErrorDto {
   error: string;
   message: string;
 }
+
+export type NextActionTypeDto = 'session' | 'review' | 'quiz' | 'topic';
+
+export interface NextActionDto {
+  type: NextActionTypeDto;
+  label: string;
+  topicKey?: string;
+  title?: string;
+  subtitle?: string;
+}
+
+export interface DashboardDto {
+  me: MeDto;
+  stats: StatsDto;
+  session?: SessionDto | null;
+  achievements: string[];
+  nextAction: NextActionDto;
+}
+
+export type RoadmapStageStatusDto = 'locked' | 'active' | 'completed';
+
+export interface RoadmapStageDto {
+  order: number;
+  key: string;
+  title: string;
+  emoji: string;
+  color: string;
+  status: RoadmapStageStatusDto;
+  topics: string[];
+  progress?: number;
+  topicKey?: string;
+}
+
+export interface RoadmapDto {
+  title: string;
+  subtitle?: string;
+  stages: RoadmapStageDto[];
+  currentStageOrder?: number;
+}

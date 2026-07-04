@@ -11,6 +11,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/home/home.component').then((m) => m.HomeComponent),
       },
       {
+        path: 'roadmap',
+        loadComponent: () =>
+          import('./features/roadmap/roadmap.component').then((m) => m.RoadmapComponent),
+      },
+      {
         path: 'topics',
         loadComponent: () =>
           import('./features/topics/topics.component').then((m) => m.TopicsComponent),
@@ -36,6 +41,11 @@ export const routes: Routes = [
     path: 'practice',
     loadComponent: () =>
       import('./features/practice/practice.component').then((m) => m.PracticeComponent),
+  },
+  {
+    path: 'quiz',
+    loadComponent: () =>
+      import('./features/quiz/quiz-pick.component').then((m) => m.QuizPickComponent),
   },
   { path: '**', redirectTo: '' },
 ];

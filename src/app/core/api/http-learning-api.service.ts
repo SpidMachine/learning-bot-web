@@ -4,10 +4,12 @@ import { catchError, forkJoin, map, Observable, of, throwError } from 'rxjs';
 import { environmentLocal } from '../../../environments/environment.local';
 import {
   AnswerResultDto,
+  DashboardDto,
   MeDto,
   QuestionDto,
   QuizPickDto,
   QuizPickRequestDto,
+  RoadmapDto,
   SessionDto,
   StartSessionRequestDto,
   StatsDto,
@@ -15,17 +17,20 @@ import {
 } from '../../shared/models/api.dto';
 import {
   AnswerResult,
-  HomeDashboard,
+  Dashboard,
   ProfileView,
   Question,
+  Roadmap,
   Session,
   Topic,
 } from '../../shared/models/learning.models';
 import {
   mapAnswerResult,
+  mapDashboard,
   mapMe,
   mapQuestion,
   mapQuizPick,
+  mapRoadmap,
   mapSession,
   mapStats,
   mapTopic,
@@ -38,20 +43,14 @@ export class HttpLearningApiService implements LearningApi {
 
   constructor(private readonly http: HttpClient) {}
 
-  getHomeDashboard(): Observable<HomeDashboard> {
-    return forkJoin({
-      me: this.http.get<MeDto>(`${this.baseUrl}/me`),
-      stats: this.http.get<StatsDto>(`${this.baseUrl}/stats`),
-      session: this.getCurrentSession(),
-      achievements: this.http.get<string[]>(`${this.baseUrl}/achievements`),
-    }).pipe(
-      map(({ me, stats, session, achievements }) => ({
-        me: mapMe(me),
-        stats: mapStats(stats),
-        session,
-        achievements,
-      })),
-    );
+  getDashboard(): Observable<Dashboard> {
+    return this.http
+      .get<DashboardDto>(`${this.baseUrl}/dashboard`)
+      .pipe(map((dto) => mapDashboard(dto)));
+  }
+
+  getRoadmap(): Observable<Roadmap> {
+    return this.http.get<RoadmapDto>(`${this.baseUrl}/roadmap`).pipe(map((dto) => mapRoadmap(dto)));
   }
 
   getProfile(): Observable<ProfileView> {

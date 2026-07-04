@@ -153,6 +153,8 @@ cp src/environments/environment.local.example.ts src/environments/environment.lo
 
 | Метод | Путь | Описание |
 |-------|------|----------|
+| GET | `/api/v1/dashboard` | Главная: me, stats, session, nextAction |
+| GET | `/api/v1/roadmap` | Этапы обучения (роудмап) |
 | GET | `/api/v1/me` | Профиль Telegram-пользователя |
 | GET | `/api/v1/topics` | Список тем |
 | GET | `/api/v1/stats` | Статистика обучения |
@@ -167,6 +169,14 @@ cp src/environments/environment.local.example.ts src/environments/environment.lo
 | GET/PATCH | `/api/v1/settings` | Настройки пользователя |
 
 Контракт: `docs/openapi.json` (копия из learning-bot-api).
+
+Обновить после мержа бэкенда:
+
+```bash
+curl -o docs/openapi.json http://localhost:8080/v3/api-docs
+```
+
+`nextAction.type` на главной: `session` → `/session`, `review` → `/practice`, `quiz` → `/quiz`, `topic` → `/topics/:key`.
 
 ---
 
