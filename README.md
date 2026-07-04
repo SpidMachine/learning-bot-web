@@ -51,7 +51,29 @@ localStorage.removeItem('DEV_INIT_DATA');
 location.reload();
 ```
 
-### Вариант 3: Telegram + ngrok
+### Вариант 3: Telegram + локальный бэкенд (без GitHub Pages)
+
+**Важно:** если в BotFather указан URL GitHub Pages — всегда грузится **production** сборка с `api.example.com`. Для локальной разработки временно переключите URL на ngrok.
+
+```bash
+# Терминал 1 — бэкенд на :8080
+# (learning-bot-api)
+
+# Терминал 2 — фронт (dev, не production!)
+npm run start:telegram
+
+# Терминал 3 — туннель
+ngrok http 4200
+```
+
+1. Скопируйте HTTPS URL из ngrok (например `https://abc123.ngrok-free.app`)
+2. В **BotFather** временно замените Menu Button URL на этот адрес
+3. Откройте Mini App из Telegram — запросы пойдут на `/api/v1` → proxy → `localhost:8080`
+4. После разработки верните URL GitHub Pages в BotFather
+
+Локальный конфиг: `src/environments/environment.local.ts` (скопируйте из `environment.local.example.ts`).
+
+### Вариант 4: Telegram + ngrok (старый способ)
 
 ```bash
 npm start
